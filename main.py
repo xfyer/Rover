@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-import pandas as pd
+# import pandas as pd
 import logging
 import twitter
+import json
 
 # Custom Log Levels
 from doltpy.core import system_helpers
@@ -29,13 +30,31 @@ def main(arguments: argparse.Namespace):
     logging.Logger.setLevel(system_helpers.logger, arguments.logLevel)  # DoltPy's Log Level
     logger.setLevel(arguments.logLevel)  # This Script's Log Level
 
+    # Setup For Twitter API
+    with open("credentials.json", "r") as file:
+        credentials = json.load(file)
 
-def runSearch():
-    api = twitter.Api(consumer_key=[consumer key],
-                      consumer_secret=[consumer secret],
-                      access_token_key=[access token],
-                      access_token_secret=[access token secret],
+    run_search(credentials=credentials)
+
+
+def run_search(credentials: json):
+    api = twitter.Api(consumer_key=credentials['consumer']['key'],
+                      consumer_secret=credentials['consumer']['secret'],
+                      access_token_key=credentials['token']['key'],
+                      access_token_secret=credentials['token']['secret'],
                       sleep_on_rate_limit=True)
+
+    mentions = api.GetMentions()
+    # logger.warning(mentions)
+
+    # [Status(ID=1330087270569955337, ScreenName=AlexEvelyn42, Created=Sat Nov 21 09:54:51 +0000 2020, Text='@DigitalRoverDog I forgot I used to have a bot on Twitter.')]
+    for mention in mentions:
+        new_status = "@{user} Hello {name}".format(name=mention.user.name, user=mention.user.screen_name)
+        logger.warning(new_status)
+        api.PostUpdate(in_reply_to_status_id=mention.id, status=new_status)
+
+    # status = api.PostUpdate('Test Tweet From Python Twitter!')
+    # logger.warning(status.text)
 
 
 if __name__ == '__main__':
