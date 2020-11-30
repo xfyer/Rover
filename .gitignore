@@ -1,0 +1,21 @@
+# Credentials
+credentials.json
+
+# Real Repo
+presidential-tweets
+
+# Test Repo
+tests/.dolt/
+tests/.sqlhistory
+tests/test.csv
+
+# Deprecated
+# .dolt/
+# .sqlhistory
+# test.csv
+
+# Virtual Environment
+venv/
+
+# Python Cache
+__pycache__
