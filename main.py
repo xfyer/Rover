@@ -44,7 +44,7 @@ def run_search(credentials: json):
                       access_token_secret=credentials['token']['secret'],
                       sleep_on_rate_limit=True)
 
-    mentions = api.GetMentions()
+    mentions = api.GetMentions(since_id=1330087270569955337)
     # logger.warning(mentions)
 
     # [Status(ID=1330087270569955337, ScreenName=AlexEvelyn42, Created=Sat Nov 21 09:54:51 +0000 2020, Text='@DigitalRoverDog I forgot I used to have a bot on Twitter.')]
