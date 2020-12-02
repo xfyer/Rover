@@ -18,7 +18,7 @@ pi3 install -r requirements.txt
 ### RPi
 
 ```bash
-sudo apt-get install libfreetype6-dev
+sudo apt-get install libfreetype6-dev libopenjp2-7 libtiff5
 
 # You may need to specify --no-cache-dir after install
 pip3 install -r requirements.txt
