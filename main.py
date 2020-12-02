@@ -98,8 +98,8 @@ def run_search(credentials: json, latest_status: int = None) -> int:
         if mention.text.startswith(own_name + " ") and mention.text.count(own_name) == 1:
             continue
 
-        print(mention.text)
-        # process_command(api=api, status=mention)
+        logger.info(mention.text)
+        process_command(api=api, status=mention)
         latest_status = mention.id
 
     return latest_status
