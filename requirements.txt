@@ -5,7 +5,7 @@ decorator==4.4.2
 doltpy==1.1.7
 future==0.18.2
 idna==2.10
-mysql-connector-python==8.0.20
+mysql-connector-python==8.0.22
 numpy==1.19.4
 oauthlib==3.1.0
 pandas==1.1.4
