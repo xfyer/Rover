@@ -93,7 +93,13 @@ def run_search(credentials: json, latest_status: int = None) -> int:
         if mention.user.id == 870156302298873856:
             continue
 
-        process_command(api=api, status=mention)
+        # To Prevent Implicit Replying (So the bot only replies to explicit requests)
+        own_name = "@DigitalRoverDog"
+        if mention.text.startswith(own_name + " ") and mention.text.count(own_name) == 1:
+            continue
+
+        print(mention.text)
+        # process_command(api=api, status=mention)
         latest_status = mention.id
 
     return latest_status

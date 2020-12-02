@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 def process_command(api: twitter.Api, status: twitter.models.Status):
     if "image" in status.text:
         draw_image(api=api, status=status)
-    else:
+    elif "hello" in status.text:
         say_hello(api=api, status=status)
 
 
