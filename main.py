@@ -96,7 +96,7 @@ def run_search(credentials: json, latest_status: int = None) -> int:
         new_status = process_command(status=mention)
         logger.warning(new_status)
 
-        # api.PostUpdate(in_reply_to_status_id=mention.id, status=new_status)
+        api.PostUpdate(in_reply_to_status_id=mention.id, status=new_status)
         latest_status = mention.id
 
     return latest_status
