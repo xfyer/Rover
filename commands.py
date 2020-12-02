@@ -46,8 +46,8 @@ def draw_image(api: twitter.Api, status: twitter.models.Status):
         im.save("working/temp.png", "PNG")
 
         new_status = "@{user}".format(user=status.user.screen_name)
-        # api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, media="working/temp.png")
-        # os.remove("working/temp.png")  # Remove temporary file
+        api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, media="working/temp.png")
+        os.remove("working/temp.png")  # Remove temporary file
 
 
 def say_hello(api: twitter.Api, status: twitter.models.Status):
