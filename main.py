@@ -93,10 +93,7 @@ def run_search(credentials: json, latest_status: int = None) -> int:
         if mention.user.id == 870156302298873856:
             continue
 
-        new_status = process_command(status=mention)
-        logger.warning(new_status)
-
-        api.PostUpdate(in_reply_to_status_id=mention.id, status=new_status)
+        process_command(api=api, status=mention)
         latest_status = mention.id
 
     return latest_status
