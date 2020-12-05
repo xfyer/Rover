@@ -15,6 +15,8 @@ from doltpy.core import system_helpers
 from doltpy.core.system_helpers import get_logger
 
 # Commands
+from twitter import TwitterError
+
 from commands import process_command
 
 VERBOSE = logging.DEBUG - 1
@@ -103,7 +105,13 @@ def run_search(credentials: json, latest_status: int = None) -> int:
             continue
 
         logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.text))
-        process_command(api=api, status=mention)
+
+        try:
+            process_command(api=api, status=mention)
+        except TwitterError as e:
+            # To Deal With That Duplicate Status Error
+            logger.error("Twitter Error: {error_message}".format(error_message=e.message))
+
         latest_status = mention.id
 
     return latest_status
