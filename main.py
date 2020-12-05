@@ -93,6 +93,7 @@ def run_search(credentials: json, latest_status: int = None) -> int:
 
     mentions: Reversible[json] = api.GetMentions(since_id=latest_status)
     # mentions: Reversible[json] = api.GetStatuses(status_ids=[1334461310734659584, 1334465300243345408, 1334466433368137729, 1335104236129046528, 1335109553088831489, 1335110267932438528])  # For Debugging Bot
+    # mentions = api.GetStatuses(status_ids=[1335104236129046528])
 
     latest_status = None
     for mention in reversed(mentions):
@@ -109,8 +110,9 @@ def run_search(credentials: json, latest_status: int = None) -> int:
         try:
             process_command(api=api, status=mention)
         except TwitterError as e:
-            # To Deal With That Duplicate Status Error
-            logger.error("Twitter Error: {error_message}".format(error_message=e.message))
+            # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
+            error: json = e.message[0]
+            logger.error("Twitter Error (Code {code}): {error_message}".format(code=error["code"], error_message=error["message"]))
 
         latest_status = mention.id
 
