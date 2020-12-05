@@ -103,7 +103,7 @@ def run_search(credentials: json, latest_status: int = None) -> int:
             continue
 
         logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.text))
-        #  process_command(api=api, status=mention)
+        process_command(api=api, status=mention)
         latest_status = mention.id
 
     return latest_status
