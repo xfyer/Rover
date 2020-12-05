@@ -5,6 +5,7 @@ import argparse
 import logging
 from json.decoder import JSONDecodeError
 from os import path
+from typing import Reversible
 
 import twitter
 import json
@@ -85,24 +86,45 @@ def run_search(credentials: json, latest_status: int = None) -> int:
                       access_token_secret=credentials['token']['secret'],
                       sleep_on_rate_limit=True)
 
-    mentions = api.GetMentions(since_id=latest_status)
+    own_id = 870156302298873856
+    own_name = "@DigitalRoverDog"
+
+    mentions: Reversible[json] = api.GetMentions(since_id=latest_status)
+    # mentions: Reversible[json] = api.GetStatuses(status_ids=[1334461310734659584, 1334465300243345408, 1334466433368137729, 1335104236129046528, 1335109553088831489, 1335110267932438528])  # For Debugging Bot
 
     latest_status = None
     for mention in reversed(mentions):
         # Don't Respond To Own Tweets (870156302298873856 is user id for @DigitalRoverDog)
-        if mention.user.id == 870156302298873856:
+        if mention.user.id == own_id:
             continue
 
         # To Prevent Implicit Replying (So the bot only replies to explicit requests)
-        own_name = "@DigitalRoverDog"
-        if mention.text.startswith(own_name + " ") and mention.text.count(own_name) == 1:
+        if not is_explicitly_mentioned(mention=mention, own_name=own_name, own_id=own_id):
             continue
 
-        logger.info(mention.text)
-        process_command(api=api, status=mention)
+        logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.text))
+        #  process_command(api=api, status=mention)
         latest_status = mention.id
 
     return latest_status
+
+
+def is_explicitly_mentioned(mention: json, own_name: str, own_id: int) -> bool:
+    # If the mention shows up more than once, return true. Twitter adds one implicit reply when replying to a user,
+    # but if more than one mention exists, then it's a guaranteed explicit mention.
+    if mention.text.startswith(own_name + " ") and mention.text.count(own_name) == 1:
+        # If Not A Reply, Accept (Since It Cannot Be An Implicit Mention Added By Twitter)
+        if mention.in_reply_to_status_id is None:
+            return True
+
+        # 1334465300243345408 should pass, 1335110267932438528 should fail
+        # Pass means that the method returns true
+        # AFAICT, there's no way to filter between these two test cases atm
+
+        logger.debug("Tweet with ID {id} Failed to Pass Filter: {json}".format(id=mention.id, json=mention))
+        return False
+
+    return True
 
 
 if __name__ == '__main__':

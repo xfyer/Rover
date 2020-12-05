@@ -12,7 +12,7 @@ export LDFLAGS="-L/opt/local/lib"
 export CPPFLAGS="-I/opt/local/include"
 
 # You may need to specify --no-cache-dir after install
-pi3 install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ### RPi

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Tweet Searcher.iml" filepath="$PROJECT_DIR$/Tweet Searcher.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Rover.iml" filepath="$PROJECT_DIR$/Rover.iml" />
     </modules>
   </component>
 </project>

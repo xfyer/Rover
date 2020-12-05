@@ -13,6 +13,8 @@ def process_command(api: twitter.Api, status: twitter.models.Status):
         draw_image(api=api, status=status)
     elif "hello" in status.text:
         say_hello(api=api, status=status)
+    elif "search" in status.text:
+        search_text(api=api, status=status)
 
 
 def draw_image(api: twitter.Api, status: twitter.models.Status):
@@ -39,7 +41,8 @@ def draw_image(api: twitter.Api, status: twitter.models.Status):
         # fnt = ImageFont.truetype("working/symbola/Symbola-AjYx.ttf", 40)
         fnt = ImageFont.truetype("working/firacode/FiraCode-Bold.ttf", 40)
         name = "Digital Rover"  # status.user.name
-        draw.multiline_text((im.size[0]-330, im.size[1]-50), name, font=fnt, fill=(int(255 - r), int(255 - g), int(255 - b)))
+        length = int(25.384615384615385 * len(name))
+        draw.multiline_text((im.size[0]-length, im.size[1]-50), name, font=fnt, fill=(int(255 - r), int(255 - g), int(255 - b)))
 
         # write to file like object
         # output = io.BytesIO()  # Why does the PostUpdate not work with general bytesio?
@@ -53,3 +56,14 @@ def draw_image(api: twitter.Api, status: twitter.models.Status):
 def say_hello(api: twitter.Api, status: twitter.models.Status):
     new_status = "@{user} Hello {name}".format(name=status.user.name, user=status.user.screen_name)
     api.PostUpdate(in_reply_to_status_id=status.id, status=new_status)
+
+
+def search_text(api: twitter.Api, status: twitter.models.Status):
+    # Broken For Some Reason
+    # select id, text from trump where text COLLATE utf8mb4_unicode_ci like '%sleepy%joe%' order by id desc limit 10;
+    # select count(id) from trump where text COLLATE utf8mb4_unicode_ci like '%sleepy%joe%';
+
+    # select id, text from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('%sleepy%joe%') order by id desc limit 10;
+    # select count(id) from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('%sleepy%joe%');
+
+    None
