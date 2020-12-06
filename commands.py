@@ -144,9 +144,15 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     else:
         word_times = "times"
 
-    new_status = "@{user} @{screen_name} has tweeted about \"{search_phrase}\" {search_count} {word_times}. The latest example is at {status_link}".format(
-        user=status.user.screen_name, status_link=url, search_phrase=original_phrase, screen_name=author,
-        search_count=count, word_times=word_times)
+    new_status = "@{user} @{screen_name} has tweeted about \"{search_phrase}\" {search_count} {word_times}. The latest example is at {status_link}".format_map(SafeDict(
+        user=status.user.screen_name, status_link=url, screen_name=author,
+        search_count=count, word_times=word_times))
+
+    truncate_amount = abs((len('\u2026') + len("{search_phrase}") + twitter.api.CHARACTER_LIMIT - len(new_status)) - len(original_phrase))
+
+    new_status = new_status.format(search_phrase=(original_phrase[:truncate_amount] + '\u2026'))
+
+    logger.debug("Status Length: {length}".format(length=len(new_status)))
 
     # CHARACTER_LIMIT
     api.PostUpdates(in_reply_to_status_id=status.id, status=new_status, continuation='\u2026')
@@ -181,3 +187,8 @@ def get_search_keywords(text: str) -> str:
     fix_html_escape = html.unescape(no_trailing_spaces)
 
     return fix_html_escape
+
+
+class SafeDict(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
