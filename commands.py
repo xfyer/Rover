@@ -90,7 +90,7 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     '''.format(phrase=phrase)
 
     count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
-    search_results = repo.sql(query=search_query, result_format="csv")  # Currently broken when handling sub-json on RPi - https://github.com/dolthub/dolt/blob/master/go/cmd/dolt/commands/sql_print.go#L186
+    search_results = repo.sql(query=search_query, result_format="json")["rows"]  # Use Commit https://github.com/dolthub/dolt/commit/6089d7e15d5fe4b02a4dc13630289baee7f937b0 Until JSON Escaping Bug Is Fixed
     # Load and Convert JSON in JSON Column - json.loads(results[0]["json"])
 
     count = -1
