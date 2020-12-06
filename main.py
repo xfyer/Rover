@@ -114,6 +114,7 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
         except TwitterError as e:
             # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
             error: json = e.message[0]
+            # TODO FIX: TypeError: string indices must be integers FOR "Text must be less than or equal to CHARACTER_LIMIT characters."
             logger.error("Twitter Error (Code {code}): {error_message}".format(code=error["code"], error_message=error["message"]))
 
         latest_status = mention.id

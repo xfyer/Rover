@@ -148,7 +148,8 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
         user=status.user.screen_name, status_link=url, search_phrase=original_phrase, screen_name=author,
         search_count=count, word_times=word_times)
 
-    api.PostUpdate(in_reply_to_status_id=status.id, status=new_status)
+    # CHARACTER_LIMIT
+    api.PostUpdates(in_reply_to_status_id=status.id, status=new_status, continuation='\u2026')
     logger.warn("Sending Status: {new_status}".format(new_status=new_status))
 
 
