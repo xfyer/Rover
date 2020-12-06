@@ -150,7 +150,11 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
 
     truncate_amount = abs((len('\u2026') + len("{search_phrase}") + twitter.api.CHARACTER_LIMIT - len(new_status)) - len(original_phrase))
 
-    new_status = new_status.format(search_phrase=(original_phrase[:truncate_amount] + '\u2026'))
+    # Don't Put Ellipses If Search Is Not Truncated
+    if (len(original_phrase) + len(new_status) + len('\u2026') - len("{search_phrase}")) >= twitter.api.CHARACTER_LIMIT:
+        new_status = new_status.format(search_phrase=(original_phrase[:truncate_amount] + '\u2026'))
+    else:
+        new_status = new_status.format(search_phrase=original_phrase)
 
     logger.debug("Status Length: {length}".format(length=len(new_status)))
 
