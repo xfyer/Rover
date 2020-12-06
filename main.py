@@ -107,7 +107,7 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
         if not is_explicitly_mentioned(mention=mention, own_name=own_name, own_id=own_id):
             continue
 
-        logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.text))
+        logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.full_text))
 
         try:
             process_command(api=api, status=mention, logger_param=logger)
