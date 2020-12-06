@@ -6,6 +6,7 @@ import os
 import random
 import time
 import ast
+import re
 
 import twitter
 from PIL import Image, ImageDraw, ImageFont
@@ -76,32 +77,50 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     # select id, text from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('%sleepy%joe%') order by id desc limit 10;
     # select count(id) from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('%sleepy%joe%');
 
-    original_phrase = "Sleepy Joe"
+    original_phrase = get_search_keywords(status.text)
 
     repo: Dolt = Dolt('working/presidential-tweets')
+    table: str = "trump"
     phrase = convert_search_to_query(original_phrase)
 
     search_query = '''
-        select * from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
-    '''.format(phrase=phrase)
+        select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
+    '''.format(phrase=phrase, table=table)
 
     count_search_query = '''
-        select count(id) from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}');
-    '''.format(phrase=phrase)
+        select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}');
+    '''.format(phrase=phrase, table=table)
 
+    # Perform Search Queries
     count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
-    search_results = repo.sql(query=search_query, result_format="json")["rows"]  # Use Commit https://github.com/dolthub/dolt/commit/6089d7e15d5fe4b02a4dc13630289baee7f937b0 Until JSON Escaping Bug Is Fixed
+    search_results = repo.sql(query=search_query, result_format="json")[
+        "rows"]  # Use Commit https://github.com/dolthub/dolt/commit/6089d7e15d5fe4b02a4dc13630289baee7f937b0 Until JSON Escaping Bug Is Fixed
     # Load and Convert JSON in JSON Column - json.loads(results[0]["json"])
 
+    # Retrieve Count of Tweets From Search
     count = -1
     for header in count_result[0]:
         count = count_result[0][header]
         logger.debug("Count For Phrase \"{search_phrase}\": {count}".format(search_phrase=original_phrase, count=count))
         break
 
+    # Print Out 10 Found Search Results To Debug Logger
+    loop_count = 0
     for result in search_results:
         logger.debug("Example Tweet For Phrase \"{search_phrase}\": {tweet_id} - {tweet_text}".format(
             search_phrase=original_phrase, tweet_id=result["id"], tweet_text=result["text"]))
+
+        loop_count += 1
+        if loop_count >= 10:
+            break
+
+    # Check To Make Sure Results Found
+    if len(search_results) < 1:
+        no_tweets_found_status = "@{user} No results found for \"{search_phrase}\"".format(user=status.user.screen_name,
+                                                                                           search_phrase=original_phrase)
+        api.PostUpdate(in_reply_to_status_id=status.id, status=no_tweets_found_status)
+        logger.warning("Sending Status: {new_status}".format(new_status=no_tweets_found_status))
+        return
 
     search_post_response = search_results[0]
     author = get_username_by_id(api=api, author_id=json.loads(search_post_response["json"])["data"]["author_id"])
@@ -131,3 +150,11 @@ def convert_search_to_query(phrase: str) -> str:
 def get_username_by_id(api: twitter.Api, author_id: int) -> str:
     user: twitter.models.User = api.GetUser(user_id=author_id)
     return user.screen_name
+
+
+def get_search_keywords(search_text: str) -> str:
+    no_mentions = re.sub('@[A-Za-z0-9]+', '', search_text)
+    no_trailing_spaces = no_mentions.lstrip().rstrip()
+    no_trailing_search_command = no_trailing_spaces.lstrip('search').lstrip()
+
+    return no_trailing_search_command
