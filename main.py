@@ -17,13 +17,14 @@ from doltpy.core.system_helpers import get_logger
 # Commands
 from twitter import TwitterError
 
+import commands
 from commands import process_command
 
 VERBOSE = logging.DEBUG - 1
 logging.addLevelName(VERBOSE, "VERBOSE")
 
 # Dolt Logger - logging.getLogger(__name__)
-logger = get_logger(__name__)
+logger: logging.Logger = get_logger(__name__)
 
 # Argument Parser Setup
 parser = argparse.ArgumentParser(description='Arguments For Tweet Searcher')
@@ -44,7 +45,7 @@ def main(arguments: argparse.Namespace):
         credentials = json.load(file)
 
     last_replied_status = read_status_from_file()
-    replied_to_status = run_search(credentials=credentials, latest_status=last_replied_status)
+    replied_to_status = process_tweet(credentials=credentials, latest_status=last_replied_status)
 
     if replied_to_status is not None:
         save_status_to_file(replied_to_status)
@@ -81,7 +82,7 @@ def read_status_from_file() -> int:
     return decoded['last_status']
 
 
-def run_search(credentials: json, latest_status: int = None) -> int:
+def process_tweet(credentials: json, latest_status: int = None) -> int:
     api = twitter.Api(consumer_key=credentials['consumer']['key'],
                       consumer_secret=credentials['consumer']['secret'],
                       access_token_key=credentials['token']['key'],
@@ -108,7 +109,7 @@ def run_search(credentials: json, latest_status: int = None) -> int:
         logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.text))
 
         try:
-            process_command(api=api, status=mention)
+            process_command(api=api, status=mention, logger_param=logger)
         except TwitterError as e:
             # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
             error: json = e.message[0]
@@ -140,6 +141,8 @@ def is_explicitly_mentioned(mention: json, own_name: str, own_id: int) -> bool:
 if __name__ == '__main__':
     # This is to get DoltPy's Logger To Shut Up When Running `this_script.py -h`
     logging.Logger.setLevel(system_helpers.logger, logging.CRITICAL)
+
+    # save_status_to_file(status_id=1335537415444951042)  # For Debugging Bot
 
     args = parser.parse_args()
     main(args)
