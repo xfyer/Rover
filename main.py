@@ -87,7 +87,8 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
                       consumer_secret=credentials['consumer']['secret'],
                       access_token_key=credentials['token']['key'],
                       access_token_secret=credentials['token']['secret'],
-                      sleep_on_rate_limit=True)
+                      sleep_on_rate_limit=True,
+                      tweet_mode="extended")
 
     own_id = 870156302298873856
     own_name = "@DigitalRoverDog"
@@ -123,7 +124,7 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
 def is_explicitly_mentioned(mention: json, own_name: str, own_id: int) -> bool:
     # If the mention shows up more than once, return true. Twitter adds one implicit reply when replying to a user,
     # but if more than one mention exists, then it's a guaranteed explicit mention.
-    if mention.text.startswith(own_name + " ") and mention.text.count(own_name) == 1:
+    if mention.full_text.startswith(own_name + " ") and mention.full_text.count(own_name) == 1:
         # If Not A Reply, Accept (Since It Cannot Be An Implicit Mention Added By Twitter)
         if mention.in_reply_to_status_id is None:
             return True
@@ -142,7 +143,7 @@ if __name__ == '__main__':
     # This is to get DoltPy's Logger To Shut Up When Running `this_script.py -h`
     logging.Logger.setLevel(system_helpers.logger, logging.CRITICAL)
 
-    # save_status_to_file(status_id=1335638854221631488)  # For Debugging Bot
+    # save_status_to_file(status_id=1335656022288064513)  # For Debugging Bot
 
     args = parser.parse_args()
     main(args)

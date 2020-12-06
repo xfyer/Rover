@@ -7,6 +7,8 @@ import random
 import time
 import ast
 import re
+from mysql.connector import conversion
+import html
 
 import twitter
 from PIL import Image, ImageDraw, ImageFont
@@ -19,11 +21,11 @@ def process_command(api: twitter.Api, status: twitter.models.Status, logger_para
     global logger
     logger = logger_param
 
-    if "image" in status.text:
+    if "image" in status.full_text:
         draw_image(api=api, status=status)
-    elif "hello" in status.text:
+    elif "hello" in status.full_text:
         say_hello(api=api, status=status)
-    elif "search" in status.text:
+    elif "search" in status.full_text:
         search_text(api=api, status=status)
 
 
@@ -77,11 +79,19 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     # select id, text from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('%sleepy%joe%') order by id desc limit 10;
     # select count(id) from trump where lower(text) COLLATE utf8mb4_unicode_ci like lower('%sleepy%joe%');
 
-    original_phrase = get_search_keywords(status.text)
+    # print(status.tweet_mode)
+
+    if status.tweet_mode == "extended":
+        status_text = status.full_text
+    else:
+        status_text = status.text
+
+    # This Variable Is Useful For Debugging Search Queries And Exploits
+    original_phrase = get_search_keywords(text=status_text)
 
     repo: Dolt = Dolt('working/presidential-tweets')
     table: str = "trump"
-    phrase = convert_search_to_query(original_phrase)
+    phrase = convert_search_to_query(phrase=original_phrase)
 
     search_query = '''
         select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
@@ -90,6 +100,8 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     count_search_query = '''
         select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}');
     '''.format(phrase=phrase, table=table)
+
+    logger.debug(search_query)
 
     # Perform Search Queries
     count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
@@ -141,6 +153,10 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
 
 
 def convert_search_to_query(phrase: str) -> str:
+    # Use MySQL Library For Escaping Search Text
+    sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
+    phrase = sql_converter.escape(value=phrase)
+
     phrase = phrase.replace(' ', '%')
     phrase = '%' + phrase + '%'
 
@@ -152,9 +168,15 @@ def get_username_by_id(api: twitter.Api, author_id: int) -> str:
     return user.screen_name
 
 
-def get_search_keywords(search_text: str) -> str:
-    no_mentions = re.sub('@[A-Za-z0-9]+', '', search_text)
-    no_trailing_spaces = no_mentions.lstrip().rstrip()
-    no_trailing_search_command = no_trailing_spaces.lstrip('search').lstrip()
+def get_search_keywords(text: str) -> str:
+    # no_mentions = re.sub('@[A-Za-z0-9]+', '', text)
+    # no_trailing_spaces = no_mentions.lstrip().rstrip()
+    # no_trailing_search_command = no_trailing_spaces.lstrip('search').lstrip()
 
-    return no_trailing_search_command
+    search_word_query = 'search'
+    search_word_pos: int = text.find(search_word_query) + len(search_word_query)
+    post_search_phrase: str = text[search_word_pos:]
+    no_trailing_spaces = post_search_phrase.lstrip().rstrip()
+    fix_html_escape = html.unescape(no_trailing_spaces)
+
+    return fix_html_escape
