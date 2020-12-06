@@ -90,7 +90,7 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     '''.format(phrase=phrase)
 
     count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
-    search_results = repo.sql(query=search_query, result_format="json")["rows"]
+    search_results = repo.sql(query=search_query, result_format="csv")  # Currently broken when handling sub-json on RPi - https://github.com/dolthub/dolt/blob/master/go/cmd/dolt/commands/sql_print.go#L186
     # Load and Convert JSON in JSON Column - json.loads(results[0]["json"])
 
     count = -1
