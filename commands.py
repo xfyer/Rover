@@ -1,25 +1,27 @@
 #!/usr/bin/python
-import io
+
 import json
 import logging
 import os
 import random
-import time
-import ast
-import re
-from mysql.connector import conversion
-import html
+from typing import Optional
 
 import twitter
 from PIL import Image, ImageDraw, ImageFont
 from doltpy.core import Dolt
 
-logger: logging.Logger = None
+from searchTweets import SafeDict, get_search_keywords, convert_search_to_query, get_username_by_id
+
+logger: Optional[logging.Logger] = None
+INFO_QUIET: Optional[int] = None
 
 
-def process_command(api: twitter.Api, status: twitter.models.Status, logger_param: logging.Logger):
+def process_command(api: twitter.Api, status: twitter.models.Status, logger_param: logging.Logger, info_level: int):
     global logger
     logger = logger_param
+
+    global INFO_QUIET
+    INFO_QUIET = info_level
 
     if "image" in status.full_text:
         draw_image(api=api, status=status)
@@ -131,7 +133,7 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
         no_tweets_found_status = "@{user} No results found for \"{search_phrase}\"".format(user=status.user.screen_name,
                                                                                            search_phrase=original_phrase)
         api.PostUpdate(in_reply_to_status_id=status.id, status=no_tweets_found_status)
-        logger.warning("Sending Status: {new_status}".format(new_status=no_tweets_found_status))
+        logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=no_tweets_found_status))
         return
 
     search_post_response = search_results[0]
@@ -144,11 +146,13 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     else:
         word_times = "times"
 
-    new_status = "@{user} @{screen_name} has tweeted about \"{search_phrase}\" {search_count} {word_times}. The latest example is at {status_link}".format_map(SafeDict(
-        user=status.user.screen_name, status_link=url, screen_name=author,
-        search_count=count, word_times=word_times))
+    new_status = "@{user} @{screen_name} has tweeted about \"{search_phrase}\" {search_count} {word_times}. The latest example is at {status_link}".format_map(
+        SafeDict(
+            user=status.user.screen_name, status_link=url, screen_name=author,
+            search_count=count, word_times=word_times))
 
-    truncate_amount = abs((len('\u2026') + len("{search_phrase}") + twitter.api.CHARACTER_LIMIT - len(new_status)) - len(original_phrase))
+    truncate_amount = abs(
+        (len('\u2026') + len("{search_phrase}") + twitter.api.CHARACTER_LIMIT - len(new_status)) - len(original_phrase))
 
     # Don't Put Ellipses If Search Is Not Truncated
     if (len(original_phrase) + len(new_status) + len('\u2026') - len("{search_phrase}")) >= twitter.api.CHARACTER_LIMIT:
@@ -160,39 +164,8 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
 
     # CHARACTER_LIMIT
     api.PostUpdates(in_reply_to_status_id=status.id, status=new_status, continuation='\u2026')
-    logger.warn("Sending Status: {new_status}".format(new_status=new_status))
+    logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=new_status))
 
 
-def convert_search_to_query(phrase: str) -> str:
-    # Use MySQL Library For Escaping Search Text
-    sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
-    phrase = sql_converter.escape(value=phrase)
-
-    phrase = phrase.replace(' ', '%')
-    phrase = '%' + phrase + '%'
-
-    return phrase
-
-
-def get_username_by_id(api: twitter.Api, author_id: int) -> str:
-    user: twitter.models.User = api.GetUser(user_id=author_id)
-    return user.screen_name
-
-
-def get_search_keywords(text: str) -> str:
-    # no_mentions = re.sub('@[A-Za-z0-9]+', '', text)
-    # no_trailing_spaces = no_mentions.lstrip().rstrip()
-    # no_trailing_search_command = no_trailing_spaces.lstrip('search').lstrip()
-
-    search_word_query = 'search'
-    search_word_pos: int = text.find(search_word_query) + len(search_word_query)
-    post_search_phrase: str = text[search_word_pos:]
-    no_trailing_spaces = post_search_phrase.lstrip().rstrip()
-    fix_html_escape = html.unescape(no_trailing_spaces)
-
-    return fix_html_escape
-
-
-class SafeDict(dict):
-    def __missing__(self, key):
-        return '{' + key + '}'
+def analyze_tweet(api: twitter.Api, status: twitter.models.Status):
+    None

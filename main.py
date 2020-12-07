@@ -1,11 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-# import pandas as pd
 import logging
 from json.decoder import JSONDecodeError
 from os import path
-from typing import Reversible
+from typing import Reversible, Optional, Any
 
 import twitter
 import json
@@ -17,11 +16,13 @@ from doltpy.core.system_helpers import get_logger
 # Commands
 from twitter import TwitterError
 
-import commands
 from commands import process_command
 
 VERBOSE = logging.DEBUG - 1
 logging.addLevelName(VERBOSE, "VERBOSE")
+
+INFO_QUIET = logging.INFO + 1
+logging.addLevelName(INFO_QUIET, "INFO_QUIET")
 
 # Dolt Logger - logging.getLogger(__name__)
 logger: logging.Logger = get_logger(__name__)
@@ -30,9 +31,9 @@ logger: logging.Logger = get_logger(__name__)
 parser = argparse.ArgumentParser(description='Arguments For Tweet Searcher')
 parser.add_argument("-log", "--log", help="Set Log Level (Defaults to WARNING)",
                     dest='logLevel',
-                    default='WARNING',
+                    default='INFO_QUIET',
                     type=str.upper,
-                    choices=['VERBOSE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
+                    choices=['VERBOSE', 'DEBUG', 'INFO', 'INFO_QUIET', 'WARNING', 'ERROR', 'CRITICAL'])
 
 
 def main(arguments: argparse.Namespace):
@@ -61,18 +62,18 @@ def save_status_to_file(status_id: int):
     f.close()
 
 
-def read_status_from_file() -> int:
+def read_status_from_file() -> Optional[Any]:
     file = "latest_status.json"
     if not path.exists(file):
         return None
 
     f = open(file, "r")
-    filecontents = f.read()
+    file_contents = f.read()
     f.close()
 
     # {"last_status": 1333984649056546816}
     try:
-        decoded = json.loads(filecontents)
+        decoded = json.loads(file_contents)
 
         if 'last_status' not in decoded:
             return None
@@ -107,10 +108,10 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
         if not is_explicitly_mentioned(mention=mention, own_name=own_name, own_id=own_id):
             continue
 
-        logger.info("Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.full_text))
+        logger.log(INFO_QUIET, "Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.full_text))
 
         try:
-            process_command(api=api, status=mention, logger_param=logger)
+            process_command(api=api, status=mention, logger_param=logger, info_level=INFO_QUIET)
         except TwitterError as e:
             # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
             error: json = e.message[0]
@@ -122,7 +123,7 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
     return latest_status
 
 
-def is_explicitly_mentioned(mention: json, own_name: str, own_id: int) -> bool:
+def is_explicitly_mentioned(mention: json, own_name: str, own_id: int = None) -> bool:
     # If the mention shows up more than once, return true. Twitter adds one implicit reply when replying to a user,
     # but if more than one mention exists, then it's a guaranteed explicit mention.
     if mention.full_text.startswith(own_name + " ") and mention.full_text.count(own_name) == 1:
@@ -134,6 +135,7 @@ def is_explicitly_mentioned(mention: json, own_name: str, own_id: int) -> bool:
         # Pass means that the method returns true
         # AFAICT, there's no way to filter between these two test cases atm
 
+        logger.log(VERBOSE, "Own Name: {own_name}, Own ID: {own_id}".format(own_name=own_name, own_id=own_id))
         logger.debug("Tweet with ID {id} Failed to Pass Filter: {json}".format(id=mention.id, json=mention))
         return False
 
@@ -144,7 +146,7 @@ if __name__ == '__main__':
     # This is to get DoltPy's Logger To Shut Up When Running `this_script.py -h`
     logging.Logger.setLevel(system_helpers.logger, logging.CRITICAL)
 
-    # save_status_to_file(status_id=1335684754688135169)  # For Debugging Bot
+    # save_status_to_file(status_id=1335766010385883137)  # For Debugging Bot
 
     args = parser.parse_args()
     main(args)
