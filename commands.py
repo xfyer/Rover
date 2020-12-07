@@ -193,17 +193,13 @@ def analyze_tweet(api: twitter.Api, status: twitter.models.Status):
 
     search_results = repo.sql(query=search_query, result_format="json")["rows"]
 
-    # Print Out 10 Found Search Results To Debug Logger
-    loop_count = 0
+    # Instantiate Text Processor
+    analyzer: HostilityAnalysis = HostilityAnalysis(logger_param=logger, verbose_level=VERBOSE)
+
+    # Load Tweets To Analyze
     for result in search_results:
-        logger.debug("Example Tweet For Phrase \"{search_phrase}\": {tweet_id} - {tweet_text}".format(
-            search_phrase=original_phrase, tweet_id=result["id"], tweet_text=result["text"]))
-
-        analyzer: HostilityAnalysis = HostilityAnalysis(logger_param=logger, verbose_level=VERBOSE)
-
+        logger.log(VERBOSE, "Adding Tweet For Processing: {tweet_id} - {tweet_text}".format(tweet_id=result["id"], tweet_text=result["text"]))
         analyzer.add_tweet_to_process(result)
-        # analyzer.preprocess_tweet()
 
-        loop_count += 1
-        if loop_count >= 10:
-            break
+    analyzer.preprocess_tweets()
+    analyzer.process_tweets()
