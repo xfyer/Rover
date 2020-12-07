@@ -1,7 +1,11 @@
 ### OSX
 
 ```bash
-sudo port install python38 py38-setuptools py38-setuptools py38-psycopg2 openssl freetype
+sudo port install python39 py39-pip py39-setuptools py39-setuptools py39-psycopg2 openssl freetype
+# sudo port install py39-numpy # (OR) brew install openblas
+
+sudo port select --set python3 python39
+sudo port select --set pip3 pip39
 
 # Instructions For Variables
 # https://stackoverflow.com/a/65072442/6828099

@@ -10,6 +10,7 @@ import twitter
 from PIL import Image, ImageDraw, ImageFont
 from doltpy.core import Dolt
 
+from hostilityAnalysis import HostilityAnalysis
 from searchTweets import SafeDict, get_search_keywords, convert_search_to_query, get_username_by_id
 
 logger: Optional[logging.Logger] = None
@@ -29,6 +30,8 @@ def process_command(api: twitter.Api, status: twitter.models.Status, logger_para
         say_hello(api=api, status=status)
     elif "search" in status.full_text:
         search_text(api=api, status=status)
+    # elif "analyze" in status.full_text:
+    #     analyze_tweet(api=api, status=status)
 
 
 def draw_image(api: twitter.Api, status: twitter.models.Status):
@@ -168,4 +171,32 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
 
 
 def analyze_tweet(api: twitter.Api, status: twitter.models.Status):
-    None
+    status_text = "12:00 A.M. on the Great Election Fraud of 2020!"  # status.full_text
+
+    # This Variable Is Useful For Debugging Search Queries And Exploits
+    original_phrase = get_search_keywords(text=status_text, search_word_query='analyze')
+
+    repo: Dolt = Dolt('working/presidential-tweets')
+    table: str = "trump"
+    phrase = convert_search_to_query(phrase=original_phrase)
+
+    search_query = '''
+        select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
+    '''.format(phrase=phrase, table=table)
+
+    search_results = repo.sql(query=search_query, result_format="json")["rows"]
+
+    # Print Out 10 Found Search Results To Debug Logger
+    loop_count = 0
+    for result in search_results:
+        logger.log(INFO_QUIET, "Example Tweet For Phrase \"{search_phrase}\": {tweet_id} - {tweet_text}".format(
+            search_phrase=original_phrase, tweet_id=result["id"], tweet_text=result["text"]))
+
+        analyzer: HostilityAnalysis = HostilityAnalysis()
+
+        analyzer.add_tweet_to_process(result)
+        analyzer.preprocess_tweet()
+
+        loop_count += 1
+        if loop_count >= 10:
+            break

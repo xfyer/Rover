@@ -21,12 +21,11 @@ def get_username_by_id(api: twitter.Api, author_id: int) -> str:
     return user.screen_name
 
 
-def get_search_keywords(text: str) -> str:
+def get_search_keywords(text: str, search_word_query: str = 'search') -> str:
     # no_mentions = re.sub('@[A-Za-z0-9]+', '', text)
     # no_trailing_spaces = no_mentions.lstrip().rstrip()
     # no_trailing_search_command = no_trailing_spaces.lstrip('search').lstrip()
 
-    search_word_query = 'search'
     search_word_pos: int = text.find(search_word_query) + len(search_word_query)
     post_search_phrase: str = text[search_word_pos:]
     no_trailing_spaces = post_search_phrase.lstrip().rstrip()
