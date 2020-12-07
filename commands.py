@@ -15,14 +15,21 @@ from searchTweets import SafeDict, get_search_keywords, convert_search_to_query,
 
 logger: Optional[logging.Logger] = None
 INFO_QUIET: Optional[int] = None
+VERBOSE: Optional[int] = None
 
 
-def process_command(api: twitter.Api, status: twitter.models.Status, logger_param: logging.Logger, info_level: int):
+def process_command(api: twitter.Api, status: twitter.models.Status, logger_param: logging.Logger,
+                    info_level: int = logging.INFO + 1,
+                    verbose_level: int = logging.DEBUG - 1):
+
     global logger
     logger = logger_param
 
     global INFO_QUIET
     INFO_QUIET = info_level
+
+    global VERBOSE
+    VERBOSE = verbose_level
 
     if "image" in status.full_text:
         draw_image(api=api, status=status)
@@ -30,8 +37,8 @@ def process_command(api: twitter.Api, status: twitter.models.Status, logger_para
         say_hello(api=api, status=status)
     elif "search" in status.full_text:
         search_text(api=api, status=status)
-    # elif "analyze" in status.full_text:
-    #     analyze_tweet(api=api, status=status)
+    elif "analyze" in status.full_text:
+        analyze_tweet(api=api, status=status)
 
 
 def draw_image(api: twitter.Api, status: twitter.models.Status):
@@ -189,13 +196,13 @@ def analyze_tweet(api: twitter.Api, status: twitter.models.Status):
     # Print Out 10 Found Search Results To Debug Logger
     loop_count = 0
     for result in search_results:
-        logger.log(INFO_QUIET, "Example Tweet For Phrase \"{search_phrase}\": {tweet_id} - {tweet_text}".format(
+        logger.debug("Example Tweet For Phrase \"{search_phrase}\": {tweet_id} - {tweet_text}".format(
             search_phrase=original_phrase, tweet_id=result["id"], tweet_text=result["text"]))
 
-        analyzer: HostilityAnalysis = HostilityAnalysis()
+        analyzer: HostilityAnalysis = HostilityAnalysis(logger_param=logger, verbose_level=VERBOSE)
 
         analyzer.add_tweet_to_process(result)
-        analyzer.preprocess_tweet()
+        # analyzer.preprocess_tweet()
 
         loop_count += 1
         if loop_count >= 10:

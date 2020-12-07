@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # Tutorial: https://www.analyticsvidhya.com/blog/2018/02/the-different-methods-deal-text-data-predictive-python/
 import json
+import logging
 
 import nltk
 import twitter
@@ -16,32 +17,40 @@ def avg_word(sentence) -> float:
 
 
 class HostilityAnalysis:
-    def __init__(self):
+    def __init__(self, logger_param: logging.Logger, verbose_level: int):
+        # TODO: Figure out how to tell if the stopwords are already downloaded
         # nltk.download('stopwords')
+
+        # Logging
+        self.logger = logger_param
+        self.VERBOSE = verbose_level
+
+        # Setup Variables
         self.stop_words: List[str] = stopwords.words('english')
         self.tweets: pd.DataFrame = pd.DataFrame()
 
     def add_tweet_to_process(self, tweet: json):
-        # print("ORIGINAL VALUE: '{text}'".format(text=tweet["text"]))
+        text: str = tweet["text"]
 
         # self.tweet: json = tweet
         analysis_data: json = {
-            "text": tweet["text"],
-            "word_count": len(tweet["text"].split(" ")),
-            "character_count": len(tweet["text"]),
-            "average_word_count": avg_word(tweet["text"]),
-            "stop_words_count": len([tweet["text"] for tweet["text"] in tweet["text"].split() if tweet["text"] in self.stop_words]),
-            "hashtag_count": len([tweet["text"] for tweet["text"] in tweet["text"].split() if tweet["text"].startswith('#')]),
-            "numeric_count": len([tweet["text"] for tweet["text"] in tweet["text"].split() if tweet["text"].isdigit()]),
-            "uppercase_word_count": len([tweet["text"] for tweet["text"] in tweet["text"].split() if tweet["text"].isupper()]),
-            "lowercase_word_count": len([tweet["text"] for tweet["text"] in tweet["text"].split() if tweet["text"].islower()])
+            "text": text,
+            "word_count": len(text.split(" ")),
+            "character_count": len(text),
+            "average_word_count": avg_word(text),
+            "stop_words_count": len([text for text in text.split() if text in self.stop_words]),
+            "hashtag_count": len([text for text in text.split() if text.startswith('#')]),
+            "numeric_count": len([text for text in text.split() if text.isdigit()]),
+            "uppercase_word_count": len([text for text in text.split() if text.isupper()]),
+            "lowercase_word_count": len([text for text in text.split() if text.islower()])
         }
 
-        # TODO: Fix tweet["text"]
+        # Append Tweet To DataFrame
         self.tweets = self.tweets.append(analysis_data, ignore_index=True)
-        print(self.tweets)
-        print(tweet["text"])
-        exit(0)
+
+        # Debug Logging
+        self.logger.log(self.VERBOSE, self.tweets)
+        self.logger.log(self.VERBOSE, text)
 
     def preprocess_tweet(self):
         # False Warning: https://youtrack.jetbrains.com/issue/PY-43841
@@ -60,6 +69,6 @@ class HostilityAnalysis:
         self.tweets["text"].head()
 
         # self.tweets["text"]: pd.DataFrame = self.tweets['text'][:5].apply(lambda x: str(TextBlob(x).correct()))  # Correct Spelling For Mistyped Words
-        print(self.tweets['text'])
+        self.logger.log(self.VERBOSE, self.tweets['text'])
 
         # TODO: 2.7 Tokenization From https://www.analyticsvidhya.com/blog/2018/02/the-different-methods-deal-text-data-predictive-python/

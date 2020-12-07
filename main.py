@@ -111,7 +111,7 @@ def process_tweet(credentials: json, latest_status: int = None) -> int:
         logger.log(INFO_QUIET, "Responding To Tweet From @{user}: {text}".format(user=mention.user.screen_name, text=mention.full_text))
 
         try:
-            process_command(api=api, status=mention, logger_param=logger, info_level=INFO_QUIET)
+            process_command(api=api, status=mention, logger_param=logger, info_level=INFO_QUIET, verbose_level=VERBOSE)
         except TwitterError as e:
             # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
             error: json = e.message[0]
