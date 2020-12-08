@@ -30,7 +30,7 @@ logger: logging.Logger = get_logger(__name__)
 
 # Argument Parser Setup
 parser = argparse.ArgumentParser(description='Arguments For Tweet Searcher')
-parser.add_argument("-log", "--log", help="Set Log Level (Defaults to WARNING)",
+parser.add_argument("-log", "--log", help="Set Log Level (Defaults to INFO_QUIET)",
                     dest='logLevel',
                     default='INFO_QUIET',
                     type=str.upper,
