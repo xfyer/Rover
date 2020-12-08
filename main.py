@@ -8,6 +8,7 @@ from typing import Reversible, Optional, Any
 
 import twitter
 import json
+import time
 
 # Custom Log Levels
 from doltpy.core import system_helpers
@@ -35,6 +36,11 @@ parser.add_argument("-log", "--log", help="Set Log Level (Defaults to WARNING)",
                     type=str.upper,
                     choices=['VERBOSE', 'DEBUG', 'INFO', 'INFO_QUIET', 'WARNING', 'ERROR', 'CRITICAL'])
 
+parser.add_argument("-wait", "--wait", help="Set Delay Before Checking For New Tweets In Minutes",
+                    dest='wait',
+                    default=1,
+                    type=int)
+
 
 def main(arguments: argparse.Namespace):
     # Set Logging Level
@@ -45,11 +51,18 @@ def main(arguments: argparse.Namespace):
     with open("credentials.json", "r") as file:
         credentials = json.load(file)
 
-    last_replied_status = read_status_from_file()
-    replied_to_status = process_tweet(credentials=credentials, latest_status=last_replied_status)
+    wait_time: int = arguments.wait * 60
+    wait_unit: str = "Minute" if wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
+    while 1:
+        logger.log(INFO_QUIET, "Checking For New Tweets")
+        last_replied_status = read_status_from_file()
+        replied_to_status = process_tweet(credentials=credentials, latest_status=last_replied_status)
 
-    if replied_to_status is not None:
-        save_status_to_file(replied_to_status)
+        if replied_to_status is not None:
+            save_status_to_file(replied_to_status)
+
+        logger.log(INFO_QUIET, "Waiting For {time} {unit} Before Checking For New Tweets".format(time=arguments.wait, unit=wait_unit))
+        time.sleep(wait_time)
 
 
 def save_status_to_file(status_id: int):
@@ -149,4 +162,8 @@ if __name__ == '__main__':
     # save_status_to_file(status_id=1335821481557831679)  # For Debugging Bot
 
     args = parser.parse_args()
-    main(args)
+    try:
+        main(args)
+    except KeyboardInterrupt:
+        logger.warning("Exiting By User Request...")
+        exit(0)

@@ -1,11 +1,9 @@
 #!/bin/bash
 
-source venv/bin/activate
+if [ -f "./venv/bin/activate" ]
+then
+    echo "Using Venv ./venv/"
+    source ./venv/bin/activate
+fi
 
-while true; do
-  echo "Checking For New Tweets"
-  python3 main.py --log=info
-
-  echo "Waiting 1 Minute"
-  sleep $((1*60))
-done
+python3 main.py --log=info
