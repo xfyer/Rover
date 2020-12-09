@@ -35,7 +35,7 @@ class TweetAPI2:
         api_url = 'https://api.twitter.com/2/tweets/{}'.format(tweet_id)
         return requests.get(api_url, params=params, auth=self.auth)
 
-    def lookup_tweets(self, user_id: str = None, screen_name=None, since_id: str = None) -> Response:
+    def lookup_tweets_via_timeline(self, user_id: str = None, screen_name: str = None, since_id: str = None) -> Response:
         params = {
             "include_rts": "true",
             "exclude_replies": "false"
@@ -57,4 +57,29 @@ class TweetAPI2:
             raise ValueError('You need to set either a user_id or screen_name. Not both, not neither')
 
         api_url = 'https://api.twitter.com/1.1/statuses/user_timeline.json'
+        return requests.get(api_url, params=params, auth=self.auth)
+
+    def lookup_tweets_via_search(self, user_id: str = None, screen_name: str = None, since_id: str = None):
+        # https://api.twitter.com/2/tweets/search/recent?query=from:25073877&max_results=100&since_id=1336411597330391045
+
+        params = {
+            "max_results": 100
+        }
+
+        if since_id is not None:
+            params['since_id'] = since_id
+
+        person = False
+        if user_id is not None:
+            params['query'] = f"from:{user_id}"
+            person = True
+
+        if screen_name is not None and not person:
+            params['query'] = f"from:@{screen_name}"
+            person = True
+
+        if not person:
+            raise ValueError('You need to set either a user_id or screen_name. Not both, not neither')
+
+        api_url = 'https://api.twitter.com/2/tweets/search/recent'
         return requests.get(api_url, params=params, auth=self.auth)

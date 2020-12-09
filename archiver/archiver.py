@@ -108,14 +108,14 @@ class Archiver:
 
         # Sanitization
         if not isinstance(since_id, str):
-            resp = self.twitter_api.lookup_tweets(user_id=president_id)
+            resp = self.twitter_api.lookup_tweets_via_search(user_id=president_id)
         else:
-            resp = self.twitter_api.lookup_tweets(user_id=president_id, since_id=since_id)
+            resp = self.twitter_api.lookup_tweets_via_search(user_id=president_id, since_id=since_id)
 
         tweets = json.loads(resp.text)
 
         tweetCount = 0
-        for tweet in tweets:
+        for tweet in tweets["data"]:
             tweetCount = tweetCount + 1
             self.logger.log(self.INFO_QUIET, "Tweet {}: {}".format(tweet['id'], tweet['text']))
 
