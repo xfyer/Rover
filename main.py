@@ -43,11 +43,13 @@ def main(arguments: argparse.Namespace):
         rover.look_for_tweets()
 
         # TODO: Implement Wait Time Check For Rover
-        current_wait_time: int = wait_time if wait_time > archiver.wait_time else archiver.wait_time
+        current_wait_time: int = wait_time
+        if isinstance(archiver.wait_time, int):
+            current_wait_time: int = wait_time if wait_time > archiver.wait_time else archiver.wait_time
 
         wait_unit: str = "Minute" if wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
         logger.log(main_config.INFO_QUIET,
-                   "Waiting For {time} {unit} Before Checking For New Tweets".format(time=current_wait_time/60,
+                   "Waiting For {time} {unit} Before Checking For New Tweets".format(time=int(current_wait_time/60),
                                                                                      unit=wait_unit))
 
         time.sleep(current_wait_time)

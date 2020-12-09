@@ -22,6 +22,7 @@ class Archiver:
         self.logger: logging.Logger = get_logger(__name__)
         self.INFO_QUIET: int = main_config.INFO_QUIET
         self.VERBOSE: int = main_config.VERBOSE
+        self.repo: Optional[Dolt] = None
 
         # Setup Repo
         self.initRepo(path=config.ARCHIVE_TWEETS_REPO_PATH,
@@ -37,9 +38,6 @@ class Archiver:
 
         # Twitter API V2
         self.twitter_api: TweetAPI2 = TweetAPI2(auth=token)
-
-        # To Get Python To Quit Complaining About Init Outside Of __init__
-        self.repo: Optional[Dolt] = None
 
         # Wait Time Remaining
         self.wait_time: Optional[int] = None
@@ -108,7 +106,7 @@ class Archiver:
         since_id = self.lookupLatestTweet(table=table)
 
         # Sanitization
-        if since_id is None:
+        if not isinstance(since_id, str):
             resp = self.twitter_api.lookup_tweets(user_id=president_id)
         else:
             resp = self.twitter_api.lookup_tweets(user_id=president_id, since_id=since_id)
