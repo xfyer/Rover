@@ -114,6 +114,10 @@ class Archiver:
 
         tweets = json.loads(resp.text)
 
+        if "data" not in tweets:
+            self.logger.log(self.INFO_QUIET, "No New Tweets Found")
+            return
+
         tweetCount = 0
         for tweet in tweets["data"]:
             tweetCount = tweetCount + 1
