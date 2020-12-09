@@ -11,13 +11,14 @@ from doltpy.core.system_helpers import get_logger
 from twitter import TwitterError
 
 from rover import commands, config
-from config import config
+from config import config as main_config
+
 
 class Rover:
     def __init__(self):
         self.logger: logging.Logger = get_logger(__name__)
-        self.INFO_QUIET: int = config.INFO_QUIET
-        self.VERBOSE: int = config.VERBOSE
+        self.INFO_QUIET: int = main_config.INFO_QUIET
+        self.VERBOSE: int = main_config.VERBOSE
         self.status_file: str = config.STATUS_FILE_PATH
         self.credentials_file: str = config.CREDENTIALS_FILE_PATH
 

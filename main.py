@@ -8,7 +8,7 @@ import time
 from doltpy.core import system_helpers
 from doltpy.core.system_helpers import get_logger
 
-from config import config
+from config import config as main_config
 from rover import Rover
 from archiver import Archiver
 
@@ -38,7 +38,6 @@ def main(arguments: argparse.Namespace):
     archiver: Archiver = Archiver()
 
     wait_time: int = arguments.wait * 60
-    wait_unit: str = "Minute" if wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
     while 1:
         archiver.download_tweets()
         rover.look_for_tweets()
@@ -46,7 +45,8 @@ def main(arguments: argparse.Namespace):
         # TODO: Implement Wait Time Check For Rover
         current_wait_time: int = wait_time if wait_time > archiver.wait_time else archiver.wait_time
 
-        logger.log(config.INFO_QUIET,
+        wait_unit: str = "Minute" if wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
+        logger.log(main_config.INFO_QUIET,
                    "Waiting For {time} {unit} Before Checking For New Tweets".format(time=current_wait_time/60,
                                                                                      unit=wait_unit))
 

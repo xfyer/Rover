@@ -5,23 +5,23 @@ import logging
 import math
 import time
 from json.decoder import JSONDecodeError
-from typing import Optional, Union
-import pandas as pd
+from typing import Optional
 
+import pandas as pd
 from doltpy.core import Dolt
 from doltpy.core.system_helpers import get_logger
 from doltpy.etl import get_df_table_writer
 
 from archiver import config
 from archiver.tweet_api_two import BearerAuth, TweetAPI2
-from config import config
+from config import config as main_config
 
 
 class Archiver:
     def __init__(self):
         self.logger: logging.Logger = get_logger(__name__)
-        self.INFO_QUIET: int = config.INFO_QUIET
-        self.VERBOSE: int = config.VERBOSE
+        self.INFO_QUIET: int = main_config.INFO_QUIET
+        self.VERBOSE: int = main_config.VERBOSE
 
         # Setup Repo
         self.initRepo(path=config.ARCHIVE_TWEETS_REPO_PATH,
