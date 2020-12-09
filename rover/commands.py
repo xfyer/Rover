@@ -10,8 +10,9 @@ import twitter
 from PIL import Image, ImageDraw, ImageFont
 from doltpy.core import Dolt
 
-from hostilityAnalysis import HostilityAnalysis
-from searchTweets import SafeDict, get_search_keywords, convert_search_to_query, get_username_by_id
+from rover import config
+from rover.hostility_analysis import HostilityAnalysis
+from rover.search_tweets import SafeDict, get_search_keywords, convert_search_to_query, get_username_by_id
 
 logger: Optional[logging.Logger] = None
 INFO_QUIET: Optional[int] = None
@@ -42,8 +43,8 @@ def process_command(api: twitter.Api, status: twitter.models.Status, logger_para
 
 
 def draw_image(api: twitter.Api, status: twitter.models.Status):
-    if not os.path.exists('working'):
-        os.makedirs('working')
+    if not os.path.exists(config.WORKING_DIRECTORY):
+        os.makedirs(config.WORKING_DIRECTORY)
 
     with Image.new("RGB", (1024, 1024)) as im:
         draw = ImageDraw.Draw(im)
@@ -62,20 +63,18 @@ def draw_image(api: twitter.Api, status: twitter.models.Status):
 
         # αℓєχιѕ єνєℓуη 🏳️‍⚧️ 🏳️‍🌈
         # Zero Width Joiner (ZWJ) does not seem to be supported, need to find a font that works with it to confirm it
-        # fnt = ImageFont.truetype("working/symbola/Symbola-AjYx.ttf", 40)
-        fnt = ImageFont.truetype("working/firacode/FiraCode-Bold.ttf", 40)
-        name = "Digital Rover"  # status.user.name
-        length = int(25.384615384615385 * len(name))
-        draw.multiline_text((im.size[0] - length, im.size[1] - 50), name, font=fnt,
+        fnt = ImageFont.truetype(config.FONT_PATH, config.FONT_SIZE)
+        length = int(config.IMAGE_NAME_OFFSET_MULTIPLIER * len(config.IMAGE_NAME))
+        draw.multiline_text((im.size[0] - length, im.size[1] - 50), config.IMAGE_NAME, font=fnt,
                             fill=(int(255 - r), int(255 - g), int(255 - b)))
 
         # write to file like object
         # output = io.BytesIO()  # Why does the PostUpdate not work with general bytesio?
-        im.save("working/temp.png", "PNG")
+        im.save(config.TEMPORARY_IMAGE_PATH, config.TEMPORARY_IMAGE_FORMAT)
 
         new_status = "@{user}".format(user=status.user.screen_name)
-        api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, media="working/temp.png")
-        os.remove("working/temp.png")  # Remove temporary file
+        api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, media=config.TEMPORARY_IMAGE_PATH)
+        os.remove(config.TEMPORARY_IMAGE_PATH)  # Remove temporary file
 
 
 def say_hello(api: twitter.Api, status: twitter.models.Status):
@@ -101,17 +100,16 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     # This Variable Is Useful For Debugging Search Queries And Exploits
     original_phrase = get_search_keywords(text=status_text)
 
-    repo: Dolt = Dolt('working/presidential-tweets')
-    table: str = "trump"
+    repo: Dolt = Dolt(config.ARCHIVE_TWEETS_REPO_PATH)
     phrase = convert_search_to_query(phrase=original_phrase)
 
     search_query = '''
         select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
-    '''.format(phrase=phrase, table=table)
+    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE)
 
     count_search_query = '''
         select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}');
-    '''.format(phrase=phrase, table=table)
+    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE)
 
     logger.debug(search_query)
 
@@ -183,13 +181,12 @@ def analyze_tweet(api: twitter.Api, status: twitter.models.Status):
     # This Variable Is Useful For Debugging Search Queries And Exploits
     original_phrase = get_search_keywords(text=status_text, search_word_query='analyze')
 
-    repo: Dolt = Dolt('working/presidential-tweets')
-    table: str = "trump"
+    repo: Dolt = Dolt(config.ARCHIVE_TWEETS_REPO_PATH)
     phrase = convert_search_to_query(phrase=original_phrase)
 
     search_query = '''
         select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
-    '''.format(phrase=phrase, table=table)
+    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE)
 
     search_results = repo.sql(query=search_query, result_format="json")["rows"]
 

@@ -32,10 +32,10 @@ class HostilityAnalysis:
             nltk.download('wordnet')
 
         # Download Tokenizer Data
-        # try:
-        #     nltk.data.find('tokenizers/punkt')
-        # except LookupError:
-        #     nltk.download('punkt')
+        try:
+            nltk.data.find('tokenizers/punkt')
+        except LookupError:
+            nltk.download('punkt')
 
         # Logging
         self.logger = logger_param
