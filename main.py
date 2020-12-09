@@ -3,6 +3,7 @@
 import argparse
 import logging
 import time
+import threading
 
 # Custom Log Levels
 from doltpy.core import system_helpers
@@ -13,6 +14,8 @@ from rover import Rover
 from archiver import Archiver
 
 # Dolt Logger - logging.getLogger(__name__)
+from rover.server import WebServer
+
 logger: logging.Logger = get_logger(__name__)
 
 # Argument Parser Setup
@@ -36,6 +39,10 @@ def main(arguments: argparse.Namespace):
 
     rover: Rover = Rover()
     archiver: Archiver = Archiver()
+    server: WebServer = WebServer(1, "Rover", 1)  # https://www.tutorialspoint.com/python3/python_multithreading.htm
+
+    # Start Webserver
+    server.start()
 
     wait_time: int = arguments.wait * 60
     while 1:
