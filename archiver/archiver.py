@@ -3,6 +3,7 @@ import csv
 import json
 import logging
 import math
+import os
 import time
 from json.decoder import JSONDecodeError
 from typing import Optional
@@ -61,7 +62,7 @@ class Archiver:
 
         # Download Tweets From File and Archive
         self.downloadNewTweets(president_id=president_id, table=table)
-        # self.downloadTweetsFromFile(repo=repo, table=table, api=tAPI, path='presidential-tweets/download-ids.csv')
+        # self.downloadTweetsFromFile(table=table, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
         # self.addTweetToDatabase(repo=repo, table=table, data=retrieveData('tests/cut-off-tweet.json'))
 
         # TODO: Determine If Needing If Is Required Here
