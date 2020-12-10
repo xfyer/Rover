@@ -1,0 +1,24 @@
+<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+<rect x="112" y="64" width="800" height="800" fill="#572100"/>
+<rect x="212" y="164" width="200" height="200" fill="#000000"/>
+<rect x="612" y="164" width="200" height="200" fill="#000000"/>
+<rect x="287" y="174" width="50" height="60" fill="#ffffff"/>
+<rect x="687" y="174" width="50" height="60" fill="#ffffff"/>
+<rect x="12" y="144" width="150" height="400" fill="#a84000"/>
+<rect x="862" y="144" width="150" height="400" fill="#a84000"/>
+<rect x="392" y="414" width="240" height="150" fill="#000000"/>
+<rect x="412" y="489" width="48" height="39" fill="#0d0d0d"/>
+<rect x="562" y="489" width="48" height="39" fill="#0d0d0d"/>
+<rect x="412" y="564" width="200" height="400" fill="#d900d9"/>
+<rect x="487" y="564" width="50" height="350" fill="#b800b8"/>
+</svg>
+
+<!--
+#a84000 - Ears
+#572100 - Face
+#000000 - Eyes (and Nose)
+#ffffff - Pupils
+#0d0d0d - Nostrils
+#d900d9 - Tongue (Outside)
+#b800b8 - Tongue (Inside)
+-->
