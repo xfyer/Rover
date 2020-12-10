@@ -1,0 +1,19 @@
+{
+  "name": "Rover Tweet Analyzer",
+  "short_name": "Rover",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#000",
+  "description": "Tweet Analysis App",
+  "icons": [{
+    "src": "images/rover.png",
+    "sizes": "1024x1024",
+    "type": "image/png",
+    "purpose": "any"
+  }, {
+    "src": "images/rover.svg",
+    "sizes": "any",
+    "type": "image/svg+xml",
+    "purpose": "any"
+  }]
+}
