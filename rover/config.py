@@ -32,3 +32,5 @@ TWITTER_USER_HANDLE: str = "@DigitalRoverDog"
 
 # Other
 REPLY: bool = True
+AUTHOR_TWITTER_ID: int = 1008066479114383360
+AUTHOR_TWITTER_HANDLE: str = "@AlexisEvelyn42"

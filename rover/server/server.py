@@ -12,6 +12,7 @@ from typing import Tuple
 import pytz
 from doltpy.core.system_helpers import get_logger
 from config import config as main_config
+from rover import config
 
 threadLock: threading.Lock = threading.Lock()
 
@@ -87,7 +88,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         # Twitter Cards - https://medium.com/@dinojoaocosta/how-to-make-twitter-preview-your-website-links-5b20db98ac4f
         self.wfile.write(bytes("<meta name=\"twitter:card\" content=\"summary\" />", "utf-8"))
-        self.wfile.write(bytes("<meta name=\"twitter:site\" content=\"@AlexisEvelyn42\" />", "utf-8"))
+        self.wfile.write(bytes(f"<meta name=\"twitter:site\" content=\"{config.AUTHOR_TWITTER_HANDLE}\" />", "utf-8"))
         self.wfile.write(bytes(f"<meta name=\"twitter:title\" content=\"{twitter_title}\" />", "utf-8"))
         self.wfile.write(bytes(f"<meta name=\"twitter:description\" content=\"{twitter_description}\" />", "utf-8"))
         self.wfile.write(bytes(f"<meta name=\"twitter:image\" content=\"{twitter_icon}\" />", "utf-8"))
