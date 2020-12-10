@@ -98,5 +98,5 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(f"<body text=\"{text_color}\" bgcolor=\"{background_color}\">", "utf-8"))
         self.wfile.write(bytes(f"<p>Request: {self.path}</p>", "utf-8"))
         self.wfile.write(bytes(f"<p>Current Time: {current_time}</p>", "utf-8"))
-        self.wfile.write(bytes("<h1>Please Visit Me On <a href=\"https://twitter.com/DigitalRoverDog\">Twitter</a> For The Currently Implemented Features!!!</h1>" % self.path, "utf-8"))
+        self.wfile.write(bytes("<h1>Please Visit Me On <a href=\"https://twitter.com/DigitalRoverDog\">Twitter</a> For The Currently Implemented Features!!!</h1>", "utf-8"))
         self.wfile.write(bytes("</body></html>", "utf-8"))
