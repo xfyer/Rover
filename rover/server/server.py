@@ -3,16 +3,14 @@
 import logging
 import socketserver
 import threading
-import humanize
-
-from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Tuple
 
-import pytz
 from doltpy.core.system_helpers import get_logger
+
 from config import config as main_config
-from rover import config
+import rover.server.page_handler as handler
+import rover.server.api_handler as api
 
 threadLock: threading.Lock = threading.Lock()
 
@@ -60,44 +58,17 @@ class RequestHandler(BaseHTTPRequestHandler):
         return
 
     def do_GET(self):
-        # TODO: Add CSS and Hosting Own Images Support
-
-        # Site Data
-        site_title: str = "Rover"
-        site_icon: str = "https://raw.githubusercontent.com/alexis-evelyn/Rover/master/rover/server/images/Rover.png"
-
-        # Twitter Metadata
-        twitter_title: str = site_title
-        twitter_description: str = "Future Analysis Website Here!!!"
-        twitter_icon: str = site_icon
-
-        # Current Time
-        current_time: str = f"{datetime.now().astimezone(tz=pytz.UTC):%A, %B, %d %Y at %H:%M:%S.%f %z}"
-        background_color: str = "#000000"
-        text_color: str = "#ffffff"
-
-        # HTTP Headers
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-        # Header
-        self.wfile.write(bytes("<html><head>", "utf-8"))
-        self.wfile.write(bytes(f"<title>{site_title}</title>", "utf-8"))
-        self.wfile.write(bytes(f"<link rel=\"icon\" type=\"image/png\" href=\"{site_icon}\">", "utf-8"))
-
-        # Twitter Cards - https://medium.com/@dinojoaocosta/how-to-make-twitter-preview-your-website-links-5b20db98ac4f
-        self.wfile.write(bytes("<meta name=\"twitter:card\" content=\"summary\" />", "utf-8"))
-        self.wfile.write(bytes(f"<meta name=\"twitter:site\" content=\"{config.AUTHOR_TWITTER_HANDLE}\" />", "utf-8"))
-        self.wfile.write(bytes(f"<meta name=\"twitter:title\" content=\"{twitter_title}\" />", "utf-8"))
-        self.wfile.write(bytes(f"<meta name=\"twitter:description\" content=\"{twitter_description}\" />", "utf-8"))
-        self.wfile.write(bytes(f"<meta name=\"twitter:image\" content=\"{twitter_icon}\" />", "utf-8"))
-
-        self.wfile.write(bytes("</head>", "utf-8"))
-
-        # Body
-        self.wfile.write(bytes(f"<body text=\"{text_color}\" bgcolor=\"{background_color}\">", "utf-8"))
-        self.wfile.write(bytes(f"<p>Request: {self.path}</p>", "utf-8"))
-        self.wfile.write(bytes(f"<p>Current Time: {current_time}</p>", "utf-8"))
-        self.wfile.write(bytes("<h1>Please Visit Me On <a href=\"https://twitter.com/DigitalRoverDog\">Twitter</a> For The Currently Implemented Features!!!</h1>", "utf-8"))
-        self.wfile.write(bytes("</body></html>", "utf-8"))
+        if self.path.lower().startswith("/api/"):
+            api.handle_api(self=self)
+        elif self.path.lower() == "/robots.txt":
+            handler.load_file(self=self, path="rover/server/web/other/robots.txt", mime_type="text/plain")
+        elif self.path.lower() == "/favicon.ico":
+            handler.load_404_page(self=self)
+        elif self.path.lower() == "/images/rover.png":
+            handler.load_file(self=self, path="rover/server/web/images/Rover.png", mime_type="image/png")
+        elif self.path.lower() == "/images/rover.svg":
+            handler.load_file(self=self, path="rover/server/web/images/Rover.svg", mime_type="image/svg+xml")
+        elif self.path.lower() == "/css/stylesheet.css":
+            handler.load_file(self=self, path="rover/server/web/css/stylesheet.css", mime_type="text/css")
+        else:
+            handler.load_page(self=self)
