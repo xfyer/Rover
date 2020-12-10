@@ -1,8 +1,10 @@
 {
   "name": "Rover Tweet Analyzer",
   "short_name": "Rover",
-  "start_url": ".",
+  "start_url": "/?pwa=true",
   "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#660099",
   "background_color": "#000",
   "description": "Tweet Analysis App",
   "icons": [{

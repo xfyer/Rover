@@ -77,6 +77,14 @@ class RequestHandler(BaseHTTPRequestHandler):
                 handler.load_file(self=self, path="rover/server/web/images/Rover.svg", mime_type="image/svg+xml")
             elif self.path.lower() == "/css/stylesheet.css":
                 handler.load_file(self=self, path="rover/server/web/css/stylesheet.css", mime_type="text/css")
+            elif self.path.lower() == "/scripts/main.js":
+                handler.load_file(self=self, path="rover/server/web/scripts/main.js", mime_type="application/javascript")
+            elif self.path.lower() == "/service-worker.js":
+                handler.load_file(self=self, path="rover/server/web/scripts/service-worker.js", mime_type="application/javascript")
+            elif self.path.lower() == "/404":
+                handler.load_404_page(self=self, error_code=200)
+            elif self.path.lower() == "/offline":
+                handler.load_offline_page(self=self)
             else:
                 handler.load_page(self=self)
         except BrokenPipeError as e:

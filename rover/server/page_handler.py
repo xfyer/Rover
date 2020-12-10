@@ -63,6 +63,33 @@ def load_binary_file(path: str) -> bytes:
     return Path(path).read_bytes()
 
 
-def load_404_page(self):
-    self.send_response(404)
+def load_404_page(self, error_code: int = 404):
+    self.send_response(error_code)
+    self.send_header("Content-type", "text/html")
     self.end_headers()
+
+    self.wfile.write(bytes(load_text_file("rover/server/web/templates/header.html")
+                           .replace("{site_title}", "404 - Page Not Found")
+                           .replace("{twitter_title}", "Page Not Found")
+                           .replace("{twitter_handle}", config.AUTHOR_TWITTER_HANDLE)
+                           .replace("{twitter_description}", "No Page Exists Here")
+                           , "utf-8"))
+
+    self.wfile.write(bytes(f"<h1>No Page Found At This Address: {self.path}</h1>", "utf-8"))
+    self.wfile.write(bytes(load_text_file("rover/server/web/templates/footer.html"), "utf-8"))
+
+
+def load_offline_page(self):
+    self.send_response(200)
+    self.send_header("Content-type", "text/html")
+    self.end_headers()
+
+    self.wfile.write(bytes(load_text_file("rover/server/web/templates/header.html")
+                           .replace("{site_title}", "Currently Offline")
+                           .replace("{twitter_title}", "Currently Offline")
+                           .replace("{twitter_handle}", config.AUTHOR_TWITTER_HANDLE)
+                           .replace("{twitter_description}", "Cannot Load Page Due Being Offline")
+                           , "utf-8"))
+
+    self.wfile.write(bytes(f"<h1>The Current Page Was Not Cached And Cannot Be Loaded Due To Being Offline</h1>", "utf-8"))
+    self.wfile.write(bytes(load_text_file("rover/server/web/templates/footer.html"), "utf-8"))
