@@ -32,6 +32,7 @@ def process_command(api: twitter.Api, status: twitter.models.Status, logger_para
     global VERBOSE
     VERBOSE = verbose_level
 
+    # TODO: Implement Better Command Parsing Handling
     if "image" in status.full_text:
         draw_image(api=api, status=status)
     elif "hello" in status.full_text:
@@ -40,6 +41,8 @@ def process_command(api: twitter.Api, status: twitter.models.Status, logger_para
         search_text(api=api, status=status)
     elif "analyze" in status.full_text:
         analyze_tweet(api=api, status=status)
+    elif "help" in status.full_text:
+        give_help(api=api, status=status)
 
 
 def draw_image(api: twitter.Api, status: twitter.models.Status):
@@ -73,13 +76,11 @@ def draw_image(api: twitter.Api, status: twitter.models.Status):
         im.save(config.TEMPORARY_IMAGE_PATH, config.TEMPORARY_IMAGE_FORMAT)
 
         new_status = "@{user}".format(user=status.user.screen_name)
-        api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, media=config.TEMPORARY_IMAGE_PATH)
+
+        if config.REPLY:
+            api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, media=config.TEMPORARY_IMAGE_PATH)
+
         os.remove(config.TEMPORARY_IMAGE_PATH)  # Remove temporary file
-
-
-def say_hello(api: twitter.Api, status: twitter.models.Status):
-    new_status = "@{user} Hello {name}".format(name=status.user.name, user=status.user.screen_name)
-    api.PostUpdate(in_reply_to_status_id=status.id, status=new_status)
 
 
 def search_text(api: twitter.Api, status: twitter.models.Status):
@@ -140,7 +141,10 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     if len(search_results) < 1:
         no_tweets_found_status = "@{user} No results found for \"{search_phrase}\"".format(user=status.user.screen_name,
                                                                                            search_phrase=original_phrase)
-        api.PostUpdate(in_reply_to_status_id=status.id, status=no_tweets_found_status)
+
+        if config.REPLY:
+            api.PostUpdate(in_reply_to_status_id=status.id, status=no_tweets_found_status)
+
         logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=no_tweets_found_status))
         return
 
@@ -171,7 +175,9 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     logger.debug("Status Length: {length}".format(length=len(new_status)))
 
     # CHARACTER_LIMIT
-    api.PostUpdates(in_reply_to_status_id=status.id, status=new_status, continuation='\u2026')
+    if config.REPLY:
+        api.PostUpdates(in_reply_to_status_id=status.id, status=new_status, continuation='\u2026')
+
     logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=new_status))
 
 
@@ -200,3 +206,17 @@ def analyze_tweet(api: twitter.Api, status: twitter.models.Status):
 
     analyzer.preprocess_tweets()
     analyzer.process_tweets()
+
+
+def say_hello(api: twitter.Api, status: twitter.models.Status):
+    new_status = "@{user} Hello {name}".format(name=status.user.name, user=status.user.screen_name)
+
+    if config.REPLY:
+        api.PostUpdate(in_reply_to_status_id=status.id, status=new_status)
+
+
+def give_help(api: twitter.Api, status: twitter.models.Status):
+    new_status = "@{user} Commands are image, hello, search, analyze (N/A), and help!!! E.g. for search, type @{own_name} search your search text here\n\nI'm also working on a website for this Rover at https://alexisevelyn.me/. It's nowhere near ready right now.".format(name=status.user.name, own_name=config.TWITTER_USER_HANDLE, user=status.user.screen_name)
+
+    if config.REPLY:
+        api.PostUpdate(in_reply_to_status_id=status.id, status=new_status, exclude_reply_user_ids=config.TWITTER_USER_ID)

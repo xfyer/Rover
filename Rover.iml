@@ -12,7 +12,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.idea/dataSources" />
       <excludeFolder url="file://$MODULE_DIR$/working" />
     </content>
-    <orderEntry type="jdk" jdkName="Rover - Python 3.8" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Rover - Python 3.9" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -15,12 +15,15 @@ from config import config as main_config
 
 
 class Rover:
-    def __init__(self):
+    def __init__(self, reply: bool = True):
         self.logger: logging.Logger = get_logger(__name__)
         self.INFO_QUIET: int = main_config.INFO_QUIET
         self.VERBOSE: int = main_config.VERBOSE
         self.status_file: str = config.STATUS_FILE_PATH
         self.credentials_file: str = config.CREDENTIALS_FILE_PATH
+
+        # For Debugging
+        config.REPLY = reply
 
         # TODO: Figure Out How To Automatically Determine This
         self.user_id: int = config.TWITTER_USER_ID

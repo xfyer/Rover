@@ -1,5 +1,7 @@
 ### OSX
 
+* Python 3.9+ Is Required
+
 ```bash
 sudo port install python39 py39-pip py39-setuptools py39-setuptools py39-psycopg2 openssl freetype
 # sudo port install py39-numpy # (OR) brew install openblas

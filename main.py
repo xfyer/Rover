@@ -3,7 +3,6 @@
 import argparse
 import logging
 import time
-import threading
 
 # Custom Log Levels
 from doltpy.core import system_helpers
@@ -26,10 +25,28 @@ parser.add_argument("-log", "--log", help="Set Log Level (Defaults to INFO_QUIET
                     type=str.upper,
                     choices=['VERBOSE', 'DEBUG', 'INFO', 'INFO_QUIET', 'WARNING', 'ERROR', 'CRITICAL'])
 
-parser.add_argument("-wait", "--wait", help="Set Delay Before Checking For New Tweets In Minutes",
+parser.add_argument("-wait", "--wait", help="Set Delay Before Checking For New Tweets In Minutes (Defaults To 1 Minute)",
                     dest='wait',
                     default=1,
                     type=int)
+
+parser.add_argument("-reply", "--reply", help="Reply to Tweets (Useful For Debugging Without Commenting Out PostUpdate Code) (Defaults To True)",
+                    dest='reply',
+                    default=True,
+                    type=bool,
+                    action=argparse.BooleanOptionalAction)
+
+parser.add_argument("-archive", "--archive", help="Archives Tweets (Useful For Debugging Without Commenting Out Archive Class) (Defaults To True)",
+                    dest='archive',
+                    default=True,
+                    type=bool,
+                    action=argparse.BooleanOptionalAction)
+
+parser.add_argument("-server", "--server", help="Run webserver (Defaults To True)",
+                    dest='server',
+                    default=True,
+                    type=bool,
+                    action=argparse.BooleanOptionalAction)
 
 
 def main(arguments: argparse.Namespace):
@@ -37,16 +54,19 @@ def main(arguments: argparse.Namespace):
     logging.Logger.setLevel(system_helpers.logger, arguments.logLevel)  # DoltPy's Log Level
     logger.setLevel(arguments.logLevel)  # This Script's Log Level
 
-    rover: Rover = Rover()
+    rover: Rover = Rover(arguments.reply)
     archiver: Archiver = Archiver()
     server: WebServer = WebServer(1, "Rover", 1)  # https://www.tutorialspoint.com/python3/python_multithreading.htm
 
     # Start Webserver
-    server.start()
+    if arguments.server:
+        server.start()
 
     wait_time: int = arguments.wait * 60
     while 1:
-        archiver.download_tweets()
+        if arguments.archive:
+            archiver.download_tweets()
+
         rover.look_for_tweets()
 
         # TODO: Implement Wait Time Check For Rover

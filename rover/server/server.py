@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 import logging
 import socketserver
 import threading
@@ -62,7 +63,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(bytes("<html><head><title>Testing</title></head>", "utf-8"))
-        self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
         self.wfile.write(bytes("<body>", "utf-8"))
+        self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
         self.wfile.write(bytes("<p>Current Time: {current_time}</p>".format(current_time=f"{datetime.now().astimezone(tz=pytz.UTC):%A, %B, %d %Y at %H:%M:%S.%f %z}"), "utf-8"))
+        self.wfile.write(bytes("<h1>Please Visit Me On <a href=\"https://twitter.com/DigitalRoverDog\">Twitter</a> For The Currently Implemented Features!!!</h1>" % self.path, "utf-8"))
         self.wfile.write(bytes("</body></html>", "utf-8"))
