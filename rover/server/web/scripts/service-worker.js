@@ -1,3 +1,4 @@
+// Push And Notifications - https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Re-engageable_Notifications_Push
 const filesToCache = [
     '/css/stylesheet.css',
     '/images/rover.png',
