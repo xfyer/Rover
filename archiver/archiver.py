@@ -61,8 +61,9 @@ class Archiver:
         self.createTableIfNotExists(table=table)
 
         # Download Tweets From File and Archive
-        self.downloadNewTweets(president_id=president_id, table=table)
+        # self.downloadNewTweets(president_id=president_id, table=table)
         # self.downloadTweetsFromFile(table=table, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        self.updateTweetsIfDeleted(table=table, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
         # self.addTweetToDatabase(repo=repo, table=table, data=retrieveData('tests/cut-off-tweet.json'))
 
         # TODO: Determine If Needing If Is Required Here
@@ -185,6 +186,64 @@ class Archiver:
 
             self.logger.log(self.VERBOSE, f'Processed {line_count} lines.')
 
+    def updateTweetsIfDeleted(self, table: str, path: str):
+        with open(path, "r") as file:
+            csv_reader = csv.reader(file, delimiter=',')
+            line_count = -1
+            for row in csv_reader:
+                if line_count == -1:
+                    self.logger.log(self.VERBOSE, f'Column names are {", ".join(row)}')
+                    line_count += 1
+                else:
+                    self.logger.log(self.VERBOSE, f'\t{row[0]}')
+                    line_count += 1
+
+                    # Don't Waste Rate Limit If Already Marked Deleted
+                    if self.isMarkedDeleted(tweet_id=row[0], table=table):
+                        return
+
+                    tweet = self.downloadTweet(tweet_id=row[0])
+
+                    # If Not A Tweet and Instead, The Rate Limit, Just Return
+                    if not isinstance(tweet, dict):
+                        return
+
+                    old_json = self.retrieveTweetJSON(tweet_id=row[0], table=table)
+
+                    if old_json is not None:
+                        tweet = old_json
+
+                    self.addTweetToDatabase(table=table, data=tweet)
+
+                    # print(json.dumps(tweet, indent=4))
+                    # print(tweet['data']['text'])
+
+            self.logger.log(self.INFO_QUIET, f'Processed {line_count} lines.')
+
+    def isMarkedDeleted(self, tweet_id: str, table: str) -> bool:
+        check_if_deleted_query = f'''
+            select id, text from {table} where id={tweet_id} and isDeleted=1
+        '''
+
+        result = self.repo.sql(check_if_deleted_query, result_format='json')["rows"]
+
+        if len(result) < 1:
+            return False
+
+        return True
+
+    def retrieveTweetJSON(self, tweet_id: str, table: str) -> Optional[str]:
+        retrieve_tweet_json_query = f'''
+            select id, json from {table} where id={tweet_id}
+        '''
+
+        result = self.repo.sql(retrieve_tweet_json_query, result_format='json')["rows"]
+
+        if len(result) < 1:
+            return None
+
+        return result[0]
+
     def addTweetToDatabase(self, table: str, data: dict):
         # TODO: Figure Out If Tweet Still Accessible Despite Some Error Messages
         if 'errors' in data and data['errors'][0]['parameter'] == 'id':
@@ -198,7 +257,7 @@ class Archiver:
                 where
                     id={id}
             '''.format(table=table, id=errorMessage['id'], isDeleted=errorMessage['isDeleted'],
-                       json=errorMessage['json'])
+                       json=json.dumps(errorMessage['json']))
 
             self.repo.sql(create_table, result_format='csv')
             return
