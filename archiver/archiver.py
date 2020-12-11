@@ -146,12 +146,12 @@ class Archiver:
             now = time.time()
             timeLeft = (float(rateLimitResetTime) - now)
 
-            rateLimitMessage = 'Rate Limit Reset Time At {} which is in {} seconds ({} minutes)'.format(
+            rateLimitMessage = 'Rate Limit Reset Time At {} which is in {} second(s) ({} minute(s))'.format(
                 rateLimitResetTime, timeLeft, timeLeft / 60)
 
-            self.wait_time = math.floor(timeLeft)
+            self.wait_time = math.floor(timeLeft + 1)
 
-            self.logger.error(msg='Received A Non-JSON Value. Probably Hit Rate Limit.'.format(self.wait_time))
+            self.logger.error(msg='Received A Non-JSON Value. Probably Hit Rate Limit. Waiting for {} minute(s)'.format(self.wait_time))
             self.logger.error(msg=rateLimitMessage)
 
     def lookupLatestArchivedTweet(self, table: str) -> str:
