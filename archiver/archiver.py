@@ -1,9 +1,9 @@
 #!/usr/bin/python
+
 import csv
 import json
 import logging
 import math
-import os
 import time
 from json.decoder import JSONDecodeError
 from typing import Optional
@@ -61,9 +61,9 @@ class Archiver:
         self.createTableIfNotExists(table=table)
 
         # Download Tweets From File and Archive
-        # self.downloadNewTweets(president_id=president_id, table=table)
+        self.downloadNewTweets(president_id=president_id, table=table)
         # self.downloadTweetsFromFile(table=table, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
-        self.updateTweetsIfDeleted(table=table, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        # self.updateTweetsIfDeleted(table=table, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
         # self.addTweetToDatabase(repo=repo, table=table, data=retrieveData('tests/cut-off-tweet.json'))
 
         # TODO: Determine If Needing If Is Required Here
@@ -173,6 +173,10 @@ class Archiver:
                     self.logger.log(self.VERBOSE, f'\t{row[0]}')
                     line_count += 1
 
+                    # TODO: Determine If Should Keep This
+                    if self.isAlreadyDownloaded(tweet_id=row[0], table=table):
+                        continue
+
                     tweet = self.downloadTweet(tweet_id=row[0])
 
                     # If Not A Tweet and Instead, The Rate Limit, Just Return
@@ -208,17 +212,33 @@ class Archiver:
                     if not isinstance(tweet, dict):
                         return
 
-                    old_json = self.retrieveTweetJSON(tweet_id=row[0], table=table)
+                    # Update isDeleted Status
+                    if 'errors' in tweet and tweet['errors'][0]['parameter'] == 'id':
+                        errorMessage = self.archiveErrorMessage(tweet)
 
-                    if old_json is not None:
-                        tweet = old_json
+                        update_deleted_status = '''
+                            UPDATE {table}
+                            set
+                                isDeleted="{isDeleted}"
+                            where
+                                id={id}
+                        '''.format(table=table, id=errorMessage['id'], isDeleted=errorMessage['isDeleted'])
 
-                    self.addTweetToDatabase(table=table, data=tweet)
-
-                    # print(json.dumps(tweet, indent=4))
-                    # print(tweet['data']['text'])
+                        self.repo.sql(update_deleted_status, result_format='csv')
 
             self.logger.log(self.INFO_QUIET, f'Processed {line_count} lines.')
+
+    def isAlreadyDownloaded(self, tweet_id: str, table: str) -> bool:
+        check_if_exists_query = f'''
+            select id, text from {table} where id={tweet_id}
+        '''
+
+        result = self.repo.sql(check_if_exists_query, result_format='json')["rows"]
+
+        if len(result) < 1:
+            return False
+
+        return True
 
     def isMarkedDeleted(self, tweet_id: str, table: str) -> bool:
         check_if_deleted_query = f'''
@@ -249,7 +269,13 @@ class Archiver:
         if 'errors' in data and data['errors'][0]['parameter'] == 'id':
             errorMessage = self.archiveErrorMessage(data)
 
-            create_table = '''
+            # TODO: Figure Out How To Determine Between Inserting New Tweet and Updating Old Tweet
+            # update_table = '''
+            #     INSERT INTO {table} (id, date, text, device, favorites, retweets, isRetweet, isDeleted, json)
+            #     values ("{id}", "1970-01-01 00:00:00", "N/A", "N/A", "0", "0", "0", "1", '{json}')
+            # '''.format(table=table, id=errorMessage['id'], json=json.dumps(errorMessage['json']))
+
+            update_table = '''
                 UPDATE {table}
                 set
                     isDeleted="{isDeleted}",
@@ -259,7 +285,7 @@ class Archiver:
             '''.format(table=table, id=errorMessage['id'], isDeleted=errorMessage['isDeleted'],
                        json=json.dumps(errorMessage['json']))
 
-            self.repo.sql(create_table, result_format='csv')
+            self.repo.sql(update_table, result_format='csv')
             return
 
         # Tweet Data
