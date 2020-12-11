@@ -19,7 +19,7 @@ TEMPORARY_IMAGE_FORMAT: str = "PNG"
 
 # Dolt Repo Vars
 ARCHIVE_TWEETS_REPO_PATH: str = os.path.join(WORKING_DIRECTORY, "presidential-tweets")
-ARCHIVE_TWEETS_TABLE: str = "trump"
+ARCHIVE_TWEETS_TABLE: str = "tweets"
 
 # Config Files
 STATUS_FILE_PATH: str = "latest_status.json"
