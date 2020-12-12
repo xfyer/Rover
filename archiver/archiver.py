@@ -56,19 +56,18 @@ class Archiver:
             self.logger.error("President Info is Missing!!! Returning From Archiver!!!")
             return
 
-        president_id = president_info[0]["twitter_user_id"]
+        twitter_user_id = president_info[0]["twitter_user_id"]
 
         # Create Table If Not Exists
         self.createTableIfNotExists()
 
         # Download Tweets From File and Archive
-        self.downloadNewTweets(president_id=president_id)
-        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        self.downloadNewTweets(twitter_user_id=twitter_user_id)
+        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=False)
         # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
 
-        # TODO: Determine If Needing If Is Required Here
         # Commit Changes If Any
-        madeCommit = self.commitData(table="tweets", message=config.ARCHIVE_TWEETS_COMMIT_MESSAGE)
+        madeCommit = self.commitData(table=config.ARCHIVE_TWEETS_TABLE, message=config.ARCHIVE_TWEETS_COMMIT_MESSAGE)
 
         # Don't Bother Pushing If Not Commit
         if madeCommit:
@@ -90,9 +89,9 @@ class Archiver:
 
         return self.repo.sql(current_president_query, result_format='csv')
 
-    def lookupLatestTweet(self, president_id: str) -> Optional[str]:
+    def lookupLatestTweet(self, twitter_user_id: str) -> Optional[str]:
         latest_tweet_id_query = f'''
-            select id from {config.ARCHIVE_TWEETS_TABLE} where twitter_user_id="{president_id}" order by id desc limit 1;
+            select id from {config.ARCHIVE_TWEETS_TABLE} where twitter_user_id="{twitter_user_id}" order by id desc limit 1;
         '''
 
         tweet_id = self.repo.sql(latest_tweet_id_query, result_format='csv')  # 1330487624402935808
@@ -103,15 +102,15 @@ class Archiver:
 
         return tweet_id[0]['id']
 
-    def downloadNewTweets(self, president_id: str):
+    def downloadNewTweets(self, twitter_user_id: str):
         # Last Tweet ID
-        since_id = self.lookupLatestTweet(president_id=president_id)
+        since_id = self.lookupLatestTweet(twitter_user_id=twitter_user_id)
 
         # Sanitization
         if not isinstance(since_id, str):
-            resp = self.twitter_api.lookup_tweets_via_search(user_id=president_id)
+            resp = self.twitter_api.lookup_tweets_via_search(user_id=twitter_user_id)
         else:
-            resp = self.twitter_api.lookup_tweets_via_search(user_id=president_id, since_id=since_id)
+            resp = self.twitter_api.lookup_tweets_via_search(user_id=twitter_user_id, since_id=since_id)
 
         tweets = json.loads(resp.text)
 
@@ -130,7 +129,7 @@ class Archiver:
             if not isinstance(full_tweet, dict):
                 return
 
-            self.addTweetToDatabase(president_id=president_id, data=full_tweet)
+            self.addTweetToDatabase(twitter_user_id=twitter_user_id, data=full_tweet)
 
         self.logger.log(self.INFO_QUIET, "Tweet Count: {}".format(tweetCount))
 
@@ -155,14 +154,14 @@ class Archiver:
             self.logger.log(main_config.VERBOSE, msg='Non-JSON Message: {message}'.format(message=resp.text))
             self.logger.error(msg=rateLimitMessage)
 
-    def lookupLatestArchivedTweet(self, president_id: str) -> str:
+    def lookupLatestArchivedTweet(self, twitter_user_id: str) -> str:
         latest_tweet = f'''
-            SELECT id FROM {config.ARCHIVE_TWEETS_TABLE} where twitter_user_id="{president_id}" ORDER BY date DESC LIMIT 1
+            SELECT id FROM {config.ARCHIVE_TWEETS_TABLE} where twitter_user_id="{twitter_user_id}" ORDER BY date DESC LIMIT 1
         '''
 
         return self.repo.sql(latest_tweet, result_format='csv')
 
-    def downloadTweetsFromFile(self, path: str):
+    def downloadTweetsFromFile(self, path: str, update_tweets: bool = False):
         with open(path, "r") as file:
             csv_reader = csv.reader(file, delimiter=',')
             line_count = -1
@@ -175,7 +174,7 @@ class Archiver:
                     line_count += 1
 
                     # TODO: Determine If Should Keep This
-                    if self.isAlreadyDownloaded(tweet_id=row[0]):
+                    if self.isAlreadyDownloaded(tweet_id=row[0]) and not update_tweets:
                         continue
 
                     tweet = self.downloadTweet(tweet_id=row[0])
@@ -184,8 +183,10 @@ class Archiver:
                     if not isinstance(tweet, dict):
                         return
 
-                    # TODO: Pull President's ID And Insert Here
-                    self.addTweetToDatabase(data=tweet, president_id="1323730225067339784")
+                    if update_tweets:
+                        self.logger.log(self.INFO_QUIET, f"Updating Existing Tweet: {row[0]}")
+
+                    self.addTweetToDatabase(data=tweet, twitter_user_id=tweet["data"]["author_id"])
 
             self.logger.log(self.VERBOSE, f'Processed {line_count} lines.')
 
@@ -264,7 +265,7 @@ class Archiver:
 
         return result[0]
 
-    def addTweetToDatabase(self, president_id: str, data: dict):
+    def addTweetToDatabase(self, twitter_user_id: str, data: dict):
         # TODO: Figure Out If Tweet Still Accessible Despite Some Error Messages
         if 'errors' in data and data['errors'][0]['parameter'] == 'id':
             errorMessage = self.archiveErrorMessage(data)
@@ -279,7 +280,7 @@ class Archiver:
                 UPDATE {table}
                 set
                     isDeleted="{isDeleted}",
-                    twitter_user_id="{president_id}",
+                    twitter_user_id="{twitter_user_id}",
                     json="{json}"
                 where
                     id={id}
@@ -287,7 +288,7 @@ class Archiver:
                        id=errorMessage['id'],
                        isDeleted=errorMessage['isDeleted'],
                        json=json.dumps(errorMessage['json']),
-                       president_id=president_id)
+                       twitter_user_id=twitter_user_id)
 
             self.repo.sql(update_table, result_format='csv')
             return
@@ -296,7 +297,7 @@ class Archiver:
         tweet = self.extractTweet(data)
 
         # Associate Twitter User ID With Tweet
-        tweet["twitter_user_id"] = president_id
+        tweet["twitter_user_id"] = twitter_user_id
 
         df = self.getDataFrame(tweet)
 
