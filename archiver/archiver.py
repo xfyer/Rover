@@ -291,10 +291,11 @@ class Archiver:
             return
 
         # TODO: Figure Out How To Determine Between Inserting New Tweet and Updating Old Tweet (And Change For Twitter User ID Information)
+        # self.logger.log(self.INFO_QUIET, "Inserting Tweet \"{id}\" With Missing Information!!!".format(id=errorMessage['id']))
         # update_table = '''
-        #     INSERT INTO {table} (id, date, text, device, favorites, retweets, isRetweet, isDeleted, json)
-        #     values ("{id}", "1970-01-01 00:00:00", "N/A", "N/A", "0", "0", "0", "1", '{json}')
-        # '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'], json=json.dumps(errorMessage['json']))
+        #     INSERT INTO {table} (id, date, text, device, favorites, retweets, isRetweet, isDeleted, twitter_user_id, json)
+        #     values ("{id}", "1970-01-01 00:00:00", "N/A", "N/A", "0", "0", "0", "1", "{account_id}", '{json}')
+        # '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'], json=json.dumps(errorMessage['json']), TRUMP ID: account_id="25073877")
 
         if twitter_user_id is not None:
             update_table = '''
