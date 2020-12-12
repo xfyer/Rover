@@ -61,9 +61,8 @@ class Archiver:
 
         # Download Tweets From File and Archive
         self.downloadNewTweets(president_id=president_id)
-        # self.downloadTweetsFromFile(president_id=president_id, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
-        # self.updateTweetsIfDeleted(president_id=president_id, path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
-        # self.addTweetToDatabase(president_id=president_id, data=self.retrieveData('tests/cut-off-tweet.json'))
+        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
 
         # TODO: Determine If Needing If Is Required Here
         # Commit Changes If Any
@@ -84,7 +83,7 @@ class Archiver:
         self.logger.debug("Current SQL Time: {}".format(current_time))
 
         current_president_query = '''
-            select `twitter_user_id`, `Database Name` from presidents where `Start Term`<'{current_date}' and (`End Term`>'{current_date}' or `End Term` is null) limit 1;
+            select `twitter_user_id` from presidents where `start_term`<'{current_date}' and (`end_term`>'{current_date}' or `end_term` is null) limit 1;
         '''.format(current_date=current_time)
 
         return self.repo.sql(current_president_query, result_format='csv')
@@ -182,10 +181,8 @@ class Archiver:
                     if not isinstance(tweet, dict):
                         return
 
-                    self.addTweetToDatabase(data=tweet)
-
-                    # print(json.dumps(tweet, indent=4))
-                    # print(tweet['data']['text'])
+                    # TODO: Pull President's ID And Insert Here
+                    self.addTweetToDatabase(data=tweet, president_id="0")
 
             self.logger.log(self.VERBOSE, f'Processed {line_count} lines.')
 
