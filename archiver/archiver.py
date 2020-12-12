@@ -63,8 +63,11 @@ class Archiver:
 
         # Download Tweets From File and Archive
         self.downloadNewTweets(twitter_user_id=twitter_user_id)
-        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=False)
+        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
         # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+
+        # TODO: Provide Argument To Disable Committing Data For Debug
+        # return
 
         # Commit Changes If Any
         madeCommit = self.commitData(table=config.ARCHIVE_TWEETS_TABLE, message=config.ARCHIVE_TWEETS_COMMIT_MESSAGE)
@@ -173,7 +176,7 @@ class Archiver:
                     self.logger.log(self.VERBOSE, f'\t{row[0]}')
                     line_count += 1
 
-                    # TODO: Determine If Should Keep This
+                    # Check If Should Be Updating Existing Tweets (Meant To Save Rate Limit For Batch Operations)
                     if self.isAlreadyDownloaded(tweet_id=row[0]) and not update_tweets:
                         continue
 
@@ -186,7 +189,8 @@ class Archiver:
                     if update_tweets:
                         self.logger.log(self.INFO_QUIET, f"Updating Existing Tweet: {row[0]}")
 
-                    self.addTweetToDatabase(data=tweet, twitter_user_id=tweet["data"]["author_id"])
+                    author_id: Optional[str] = tweet["data"]["author_id"] if "data" in tweet else None
+                    self.addTweetToDatabase(data=tweet, twitter_user_id=author_id)
 
             self.logger.log(self.VERBOSE, f'Processed {line_count} lines.')
 
@@ -265,32 +269,61 @@ class Archiver:
 
         return result[0]
 
-    def addTweetToDatabase(self, twitter_user_id: str, data: dict):
-        # TODO: Figure Out If Tweet Still Accessible Despite Some Error Messages
+    def is_inaccessible_tweet(self, data: dict) -> bool:
+        # TODO: Figure Out If Non-Deleted Tweet Error Message Can Pass This Check
         if 'errors' in data and data['errors'][0]['parameter'] == 'id':
-            errorMessage = self.archiveErrorMessage(data)
+            return True
 
-            # TODO: Figure Out How To Determine Between Inserting New Tweet and Updating Old Tweet (And Change For Presidents Id)
-            # update_table = '''
-            #     INSERT INTO {table} (id, date, text, device, favorites, retweets, isRetweet, isDeleted, json)
-            #     values ("{id}", "1970-01-01 00:00:00", "N/A", "N/A", "0", "0", "0", "1", '{json}')
-            # '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'], json=json.dumps(errorMessage['json']))
+        return False
 
+    def handle_error_tweet(self, twitter_user_id: Optional[str], data: dict):
+        errorMessage = self.archiveErrorMessage(data)
+
+        check_if_already_archived = '''
+            SELECT id, twitter_user_id from {table} where id={id}
+        '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'])
+
+        result = self.repo.sql(check_if_already_archived, result_format='csv')
+
+        # TODO: Figure Out How To Find Twitter User ID Information For Non-Archived Deleted Tweet
+        if len(result) < 1:
+            self.logger.warning("Cannot Insert Tweet {id} Because Of Missing Twitter Account ID Information!!!".format(id=errorMessage['id']))
+            return
+
+        # TODO: Figure Out How To Determine Between Inserting New Tweet and Updating Old Tweet (And Change For Twitter User ID Information)
+        # update_table = '''
+        #     INSERT INTO {table} (id, date, text, device, favorites, retweets, isRetweet, isDeleted, json)
+        #     values ("{id}", "1970-01-01 00:00:00", "N/A", "N/A", "0", "0", "0", "1", '{json}')
+        # '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'], json=json.dumps(errorMessage['json']))
+
+        if twitter_user_id is not None:
             update_table = '''
                 UPDATE {table}
                 set
                     isDeleted="{isDeleted}",
-                    twitter_user_id="{twitter_user_id}",
-                    json="{json}"
+                    twitter_user_id="{twitter_user_id}"
                 where
                     id={id}
             '''.format(table=config.ARCHIVE_TWEETS_TABLE,
                        id=errorMessage['id'],
                        isDeleted=errorMessage['isDeleted'],
-                       json=json.dumps(errorMessage['json']),
                        twitter_user_id=twitter_user_id)
+        else:
+            update_table = '''
+                UPDATE {table}
+                set
+                    isDeleted="{isDeleted}"
+                where
+                    id={id}
+            '''.format(table=config.ARCHIVE_TWEETS_TABLE,
+                       id=errorMessage['id'],
+                       isDeleted=errorMessage['isDeleted'])
 
-            self.repo.sql(update_table, result_format='csv')
+        self.repo.sql(update_table, result_format='csv')
+
+    def addTweetToDatabase(self, twitter_user_id: Optional[str], data: dict):
+        if self.is_inaccessible_tweet(data=data):
+            self.handle_error_tweet(data=data, twitter_user_id=twitter_user_id)
             return
 
         # Tweet Data
