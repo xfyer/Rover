@@ -105,7 +105,8 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     phrase = convert_search_to_query(phrase=original_phrase)
 
     # Format Search Query
-    hide_deleted: str = "and isDeleted=0" if config.HIDE_DELETED_TWEETS else "" # Determine If Should Filter Out Deleted Tweets
+    hide_deleted: str = "and isDeleted=0" if config.HIDE_DELETED_TWEETS else ""  # Determine If Should Filter Out Deleted Tweets
+    hide_deleted: str = hide_deleted if not config.ONLY_DELETED_TWEETS else "and isDeleted=1"  # Only Show Deleted Tweets
     search_query = '''
         select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') {hide_deleted} order by id desc limit 10;
     '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE, hide_deleted=hide_deleted)
@@ -139,6 +140,7 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     url = "https://twitter.com/{screen_name}/statuses/{status_id}".format(status_id=search_post_response["id"],
                                                                           screen_name=author)
 
+    # Format Count Search Query
     count_search_query = '''
         select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') and twitter_user_id={twitter_user_id} {hide_deleted};
     '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE, twitter_user_id=search_post_response["twitter_user_id"], hide_deleted=hide_deleted)
