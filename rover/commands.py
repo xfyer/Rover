@@ -149,7 +149,7 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
         return
 
     search_post_response = search_results[0]
-    author = get_username_by_id(api=api, author_id=json.loads(search_post_response["json"])["data"]["author_id"])
+    author = get_username_by_id(api=api, author_id=search_post_response["twitter_user_id"])
     url = "https://twitter.com/{screen_name}/statuses/{status_id}".format(status_id=search_post_response["id"],
                                                                           screen_name=author)
 
