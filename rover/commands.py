@@ -104,28 +104,14 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     repo: Dolt = Dolt(config.ARCHIVE_TWEETS_REPO_PATH)
     phrase = convert_search_to_query(phrase=original_phrase)
 
+    # Format Search Query
+    hide_deleted: str = "and isDeleted=0" if config.HIDE_DELETED_TWEETS else "" # Determine If Should Filter Out Deleted Tweets
     search_query = '''
-        select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') order by id desc limit 10;
-    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE)
+        select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') {hide_deleted} order by id desc limit 10;
+    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE, hide_deleted=hide_deleted)
 
-    count_search_query = '''
-        select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}');
-    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE)
-
-    logger.debug(search_query)
-
-    # Perform Search Queries
-    count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
-    search_results = repo.sql(query=search_query, result_format="json")[
-        "rows"]  # Use Commit https://github.com/dolthub/dolt/commit/6089d7e15d5fe4b02a4dc13630289baee7f937b0 Until JSON Escaping Bug Is Fixed
-    # Load and Convert JSON in JSON Column - json.loads(results[0]["json"])
-
-    # Retrieve Count of Tweets From Search
-    count = -1
-    for header in count_result[0]:
-        count = count_result[0][header]
-        logger.debug("Count For Phrase \"{search_phrase}\": {count}".format(search_phrase=original_phrase, count=count))
-        break
+    # Perform Search Query
+    search_results = repo.sql(query=search_query, result_format="json")["rows"]  # Use Commit https://github.com/dolthub/dolt/commit/6089d7e15d5fe4b02a4dc13630289baee7f937b0 Until JSON Escaping Bug Is Fixed
 
     # Print Out 10 Found Search Results To Debug Logger
     loop_count = 0
@@ -152,6 +138,20 @@ def search_text(api: twitter.Api, status: twitter.models.Status):
     author = get_username_by_id(api=api, author_id=search_post_response["twitter_user_id"])
     url = "https://twitter.com/{screen_name}/statuses/{status_id}".format(status_id=search_post_response["id"],
                                                                           screen_name=author)
+
+    count_search_query = '''
+        select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{phrase}') and twitter_user_id={twitter_user_id} {hide_deleted};
+    '''.format(phrase=phrase, table=config.ARCHIVE_TWEETS_TABLE, twitter_user_id=search_post_response["twitter_user_id"], hide_deleted=hide_deleted)
+
+    # Perform Count Query
+    count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
+
+    # Retrieve Count of Tweets From Search
+    count = -1
+    for header in count_result[0]:
+        count = count_result[0][header]
+        logger.debug("Count For Phrase \"{search_phrase}\": {count}".format(search_phrase=original_phrase, count=count))
+        break
 
     if count == 1:
         word_times = "time"
