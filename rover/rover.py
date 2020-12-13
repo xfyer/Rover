@@ -10,7 +10,7 @@ import twitter
 from doltpy.core.system_helpers import get_logger
 from twitter import TwitterError
 
-from rover import commands, config
+from rover import handle_commands, config
 from config import config as main_config
 
 
@@ -73,8 +73,7 @@ class Rover:
                                                                               text=mention.full_text))
 
             try:
-                commands.process_command(api=api, status=mention,
-                                         logger_param=self.logger,
+                handle_commands.process_command(api=api, status=mention,
                                          info_level=self.INFO_QUIET,
                                          verbose_level=self.VERBOSE)
 

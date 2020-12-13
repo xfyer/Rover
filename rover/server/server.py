@@ -58,7 +58,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         super().__init__(request, client_address, server)
 
-    def log_message(self, log_format, *args):
+    def log_message(self, log_format: str, *args: [str]):
         self.logger.log(logging.DEBUG, log_format % args)
 
     def do_GET(self):
