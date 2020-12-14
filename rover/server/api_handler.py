@@ -67,7 +67,7 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
         :param queries: GET Queries Dictionary
         :return: JSON Response
     """
-    latest_tweets: dict = convertIDsToString(results=database.latest_tweets(repo=repo, table=table, max_responses=100))
+    latest_tweets: dict = convertIDsToString(results=database.latest_tweets(repo=repo, table=table, max_responses=20))
 
     return {
         "results": latest_tweets
