@@ -39,7 +39,7 @@ def load_page(self):
     self.wfile.write(bytes(f"<input type='button' value='Download Latest 20 Tweets' onclick='updateTweets();' />", "utf-8"))
     self.wfile.write(bytes(f"<input type='button' value='Load Cached Tweets (If Any)' onclick='populateTweets();' />", "utf-8"))
 
-    self.wfile.write(bytes(f"<div id='latest-tweets'></div>", "utf-8"))
+    self.wfile.write(bytes(f"<div id='tweets'></div>", "utf-8"))
     self.wfile.write(bytes(
         "<h1>Please Visit Me On <a href=\"https://twitter.com/DigitalRoverDog\">Twitter</a> For The Currently Implemented Features!!!</h1>",
         "utf-8"))

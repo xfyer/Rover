@@ -28,9 +28,9 @@ table {
     }
 }
 
-div#latest-tweets {
+div#tweets {
     overflow-x: auto;
 
     /* Adblock Breaks The Div, So It Could Happen To Someone Else */
-    display: block !important;
+    /* display: block !important; */
 }
