@@ -29,5 +29,5 @@ table {
 }
 
 #latest-tweets {
-    overflow-x: auto;
+    /* overflow-x: auto; */
 }
