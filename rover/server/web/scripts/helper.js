@@ -25,7 +25,7 @@ function lookupNameFromID(twitter_account_id) {
 function generateTableFromTweets(tweets) {
     $(document).ready(function () {
         // Reset Table
-        $('#tweets').html("<table id='tweets-table'></table>")
+        $('#gov-tweets').html("<table id='tweets-table'></table>")
 
         $('<tr>').append(
             $('<td>').text("Row"),

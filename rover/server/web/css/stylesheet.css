@@ -28,9 +28,6 @@ table {
     }
 }
 
-div#tweets {
+div#gov-tweets {
     overflow-x: auto;
-
-    /* Adblock Breaks The Div, So It Could Happen To Someone Else */
-    /* display: block !important; */
 }
