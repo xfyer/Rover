@@ -4,6 +4,23 @@ from typing import Optional
 from doltpy.core import Dolt
 
 
+def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[str] = None,
+                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> dict:
+    handle_deleted: str = "and isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
+    handle_deleted: str = handle_deleted if not only_deleted_tweets else "and isDeleted=1"  # Only Show Deleted Tweets
+
+    handle_account_id: str = "" if account_id is None else f"where twitter_user_id={account_id}"
+
+    # Format Latest Tweets Query - TODO: Fix Where Clause and Sanitize For Twitter User ID
+    columns: str = "id, twitter_user_id, date, text, device, favorites, retweets, quoteTweets, replies, isRetweet, isDeleted, repliedToTweetId, repliedToUserId, repliedToTweetDate, retweetedTweetId, retweetedUserId, retweetedTweetDate, hasWarning, warningLabel"
+    latest_tweets_query = f'''
+        select {columns} from {table} {handle_account_id} {handle_deleted} order by id desc limit {max_responses};
+    '''
+
+    # Retrieve Latest Tweets
+    return repo.sql(query=latest_tweets_query, result_format="json")["rows"]
+
+
 def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[str] = None,
                   hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> dict:
     handle_deleted: str = "and isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
@@ -11,7 +28,7 @@ def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int
 
     handle_account_id: str = "" if account_id is None else f"and twitter_user_id={account_id}"
 
-    # Format Search Query
+    # Format Search Query - TODO: Sanitize For Twitter User ID
     search_query = f'''
         select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}') {handle_deleted} {handle_account_id} order by id desc limit {max_responses};
     '''
@@ -28,7 +45,7 @@ def count_tweets(search_phrase: str, repo: Dolt, table: str, account_id: Optiona
 
     handle_account_id: str = "" if account_id is None else f"and twitter_user_id={account_id}"
 
-    # Format Count Search Query
+    # Format Count Search Query - TODO: Sanitize For Twitter User ID
     count_search_query = f'''
         select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}') {handle_deleted} {handle_account_id};
     '''

@@ -4,3 +4,30 @@ body {
     background-color: black;
     color: white;
 }
+
+table, th, td {
+    border: 1px solid Black;
+}
+
+/* make the table a 100% wide by default */
+table {
+    width: 90%;
+}
+
+/* if the browser window is at least 800px-s wide: */
+@media screen and (min-width: 800px) {
+    table {
+        width: 80%;
+    }
+}
+
+/* if the browser window is at least 1000px-s wide: */
+@media screen and (min-width: 1000px) {
+    table {
+        width: 70%;
+    }
+}
+
+#latest-tweets {
+    overflow-x: auto;
+}

@@ -5,7 +5,7 @@ const tweetCacheName = 'tweets-cache-v1';
 const tweetSyncName = 'tweets-sync';
 
 // Sync URLs
-const tweetAPIURL = '/api?text='
+const tweetAPIURL = '/api/latest'
 
 registerServiceWorker();
 
@@ -65,6 +65,10 @@ async function downloadNewTweets() {
     console.log("Downloading New Tweets!!!")
 
     const tweetsCache = await caches.open(tweetCacheName);
+
+    // Delete The Cache, Then Re-add
+    // TODO: Figure Out How To Fail Gracefully So That Cache Is Not Wiped On Failed Connection
+    await tweetsCache.delete(tweetAPIURL);
     await tweetsCache.add(tweetAPIURL);
 }
 
