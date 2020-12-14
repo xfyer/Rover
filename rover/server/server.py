@@ -79,6 +79,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 handler.load_file(self=self, path="rover/server/web/css/stylesheet.css", mime_type="text/css")
             elif self.path.lower() == "/scripts/main.js":
                 handler.load_file(self=self, path="rover/server/web/scripts/main.js", mime_type="application/javascript")
+            elif self.path.lower() == "/scripts/helper.js":
+                handler.load_file(self=self, path="rover/server/web/scripts/helper.js", mime_type="application/javascript")
             elif self.path.lower() == "/service-worker.js":
                 handler.load_file(self=self, path="rover/server/web/scripts/service-worker.js", mime_type="application/javascript")
             elif self.path.lower() == "/404":

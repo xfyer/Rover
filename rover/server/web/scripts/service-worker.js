@@ -1,25 +1,27 @@
+// Import Main Script To Avoid Duplicating Functions and Variables
+importScripts("/scripts/main.js")
+
 // Push And Notifications - https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Re-engageable_Notifications_Push
 const filesToCache = [
+    '/manifest.webmanifest',
+    '/scripts/main.js',
+    '/scripts/helper.js',
     '/css/stylesheet.css',
     '/images/rover.png',
     '/images/rover.svg',
     '/offline',
-    '/404'
+    '/404',
+    '/',
+    '/?pwa=true',
+    'https://code.jquery.com/jquery-3.5.1.min.js'
 ];
 
 // Cache Names
 const staticCacheName = 'pages-cache-v1';
-const tweetCacheName = 'tweets-cache-v1';
-
-// Sync Events
-const tweetSyncName = 'tweets-sync';
-
-// Sync URLs
-const tweetAPIURL = '/api?text='
 
 // Install Pages To Cache
 self.addEventListener('install', event => {
-    console.log('Attempting To Install Service Worker And Cache Static Assets!!!');
+    console.debug('Attempting To Install Service Worker And Cache Static Assets!!!');
     event.waitUntil(
         caches.open(staticCacheName)
         .then(cache => {
@@ -65,10 +67,7 @@ self.addEventListener('fetch', event => {
 
 // Activate New Service Worker To Replace Caches (Replace staticCacheName to upgrade service worker cache)
 self.addEventListener('activate', event => {
-    console.log('Activating New Service Worker!!!');
-
-    // Hmmmmmmm...
-    setupBackgroundSync()
+    console.debug('Activating New Service Worker!!!');
 
     const cacheAllowList = [staticCacheName];
 
@@ -85,92 +84,12 @@ self.addEventListener('activate', event => {
     );
 });
 
-self.addEventListener('periodicSync', (event) => {
+// Must Be All Lowercase For Reasons...
+self.addEventListener('periodicsync', (event) => {
     if (event.tag === tweetSyncName) {
-        // See the "Think before you sync" section for
-        // checks you could perform before syncing.
-        event.waitUntil(updateTweets());
+        // TODO: Check If Needing To Sync
+
+        console.debug("Periodic Sync Triggered For: ", tweetSyncName)
+        event.waitUntil(downloadNewTweets());
     }
 });
-
-async function updateTweets() {
-    console.log("Downloading New Tweets!!!")
-
-    const tweetsCache = await caches.open(tweetCacheName);
-    await tweetsCache.add(tweetAPIURL);
-}
-
-// setupBackgroundSync()
-async function setupBackgroundSync() {
-    if ('serviceWorker' in navigator) {
-        console.log("Checking For Background Sync Capabilities and Registering")
-        await checkAndRegisterBackgroundSync().then(await verifyBackgroundSyncRegistration)
-    } else {
-        console.warn("Service Worker Missing From Navigator!!!")
-    }
-}
-
-async function checkAndRegisterBackgroundSync() {
-    const status = await navigator.permissions.query({
-        name: 'periodic-background-sync',
-    });
-
-    if (status.state === 'granted') {
-        // Periodic background sync can be used.
-        console.log("Background Sync Access Granted!!!")
-        await registerBackgroundSync()
-    } else {
-        // Periodic background sync cannot be used.
-        console.warn("Background Sync Access Denied!!!")
-    }
-}
-
-async function registerBackgroundSync() {
-    const registration = await navigator.serviceWorker.ready;
-
-    if ('periodicSync' in registration) {
-        try {
-            console.debug("Trying To Register Sync Handler!!!")
-            await registration.periodicSync.register(tweetSyncName, {
-                // An interval of one day.
-                minInterval: 24 * 60 * 60 * 1000,
-            }).then(() => {
-                console.debug("Registered Sync Handler!!!")
-            });
-        } catch (error) {
-            // Periodic background sync cannot be used.
-            console.error("Failed To Register Sync Handler!!! Error: ${error}")
-        }
-    }
-}
-
-async function verifyBackgroundSyncRegistration() {
-    const registration = await navigator.serviceWorker.ready;
-
-    if ('periodicSync' in registration) {
-        const tags = await registration.periodicSync.getTags();
-
-        // Only update content if sync isn't set up.
-        if (tags.includes(tweetSyncName)) {
-            console.debug("Background Sync Registration Failed!!!")
-            // updateContentOnPageLoad();
-        } else {
-            console.debug("Background Sync Registration Verified!!!")
-            await updateTweets()
-        }
-    } else {
-        // If periodic background sync isn't supported, always update.
-        // updateContentOnPageLoad();
-        console.debug("Background Sync Not Supported!!!")
-    }
-}
-
-async function unregisterBackgroundSync() {
-    const registration = await navigator.serviceWorker.ready;
-
-    if ('periodicSync' in registration) {
-        await registration.periodicSync.unregister(tweetSyncName).then(() => {
-            console.debug("Unregistered Background Sync!!!")
-        })
-    }
-}
