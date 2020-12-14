@@ -63,7 +63,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            if self.path.lower().startswith("/api/"):
+            if self.path.lower().startswith("/api"):
                 api.handle_api(self=self)
             elif self.path.lower() == "/manifest.webmanifest":
                 handler.load_file(self=self, path="rover/server/web/other/manifest.json", mime_type="application/manifest+json")
