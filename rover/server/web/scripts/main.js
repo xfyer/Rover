@@ -8,7 +8,9 @@ const tweetSyncName = 'tweets-sync';
 // Sync URLs
 const tweetAPIURL = '/api/latest'
 
+// Load Functions
 registerServiceWorker();
+installEruda();
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
@@ -160,5 +162,3 @@ function installEruda() {
             })
     });
 }
-
-installEruda();

@@ -1,3 +1,6 @@
+// Load Functions
+setupMaterialUI()
+
 // From https://stackoverflow.com/a/17192845/6828099
 function uintToString(uintArray) {
     let encodedString = String.fromCharCode.apply(null, uintArray);
@@ -36,7 +39,7 @@ function generateTableFromTweets(tweets) {
             $('<td>').text("Device")
         ).appendTo('#tweets-table');
 
-        // convert string to JSON
+        // Convert String To JSON
         // TODO: This particular function breaks with 22 or more tweets (based on String Size, Not Tweet Count)
         // TODO: It appears that the JSON gets chopped off in JQuery's Internal Code (Only When Embedding JSON)
         response = $.parseJSON(tweets);
@@ -66,5 +69,3 @@ function setupMaterialUI() {
         });
     });
 }
-
-setupMaterialUI()
