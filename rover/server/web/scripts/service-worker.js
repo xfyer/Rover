@@ -13,7 +13,10 @@ const filesToCache = [
     '/404',
     '/',
     '/?pwa=true',
-    'https://code.jquery.com/jquery-3.5.1.min.js'
+    'https://code.jquery.com/jquery-3.5.1.min.js',
+    'https://unpkg.com/material-components-web@8.0.0/dist/material-components-web.min.css',
+    'https://unpkg.com/material-components-web@8.0.0/dist/material-components-web.min.js',
+    'https://fonts.googleapis.com/icon?family=Material+Icons'
 ];
 
 // Cache Names
@@ -36,18 +39,20 @@ self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
         .then(response => {
+            // Load Page From Cache If Cached
             if (response) {
                 console.debug('Found, ', event.request.url, ', In Cache');
                 return response;
             }
 
+            // Attempt To Retrieve Page Via Network
             console.debug('Network Request For ', event.request.url);
             return fetch(event.request).then(response => {
                 return caches.open(staticCacheName).then(() => {
-                    // Return Cached Page
+                    // Return Fresh Page (200 Status Code)
                     return response;
                 }).catch(() => {
-                    // Return 404 Page (And Associate URL With 404 Page)
+                    // Return Cached 404 Page When Receiving 404 Status Code (And Associate URL With 404 Page)
                     if (response.status === 404) {
                         caches.put('/404', response.clone());
                         return response;
@@ -55,10 +60,18 @@ self.addEventListener('fetch', event => {
                 });
             });
         }).catch(() => {
+            // TODO: Figure Out Why Not Load Cache With If Statement and Remove Hardcoded /?pwa=true
+            // if (location.pathname === '/') {
+            //     // Return Cached Root Page
+            //     return caches.match("/").then(cache => {
+            //         console.error("TEST: ", location.pathname)
+            //         return cache
+            //     });
+            // }
+
             // Return Cached Offline Page
             return caches.match("/offline").then(cache => {
                 const init = {"status": 503, "statusText": "Offline"};  // 503 Means Service Unavailable
-                // const blob = new Blob([offline_page], {type : 'text/html'});
                 return new Response(cache.body, init);
             });
         })

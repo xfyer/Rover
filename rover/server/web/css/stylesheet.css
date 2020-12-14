@@ -9,23 +9,43 @@ table, th, td {
     border: 1px solid White;
 }
 
-/* make the table a 100% wide by default */
 table {
-    width: 90%;
+    width: 100%;
+    margin: 0 0 20px 0;
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    text-align: center;
 }
 
-/* if the browser window is at least 800px-s wide: */
-@media screen and (min-width: 800px) {
-    table {
-        width: 80%;
-    }
+td, th {
+    font-size: 1em;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 3px 7px 2px 7px;
+    color: #b5e853;
 }
 
-/* if the browser window is at least 1000px-s wide: */
-@media screen and (min-width: 1000px) {
-    table {
-        width: 70%;
-    }
+tr td {
+    color: #b5e853;
+    background: rgba(0, 0, 0, .5);
+}
+
+tr:nth-child(even) td {
+    color: #b5e853;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+td {
+    padding: 5px 10px;
+}
+
+/* Note that order does matter in a css file, especially when td, th is trying to set the text color to green instead of white */
+th {
+    border-bottom: 1px dashed #b5e853;
+    padding: 5px 10px;
+    color: #ffffff;
+    background: rgba(0, 130, 0, 1);
+    font-weight: bold; /* Do note, on the table header tag, the font-weight: bold is unnecessary as the table header by default is bold */
+    text-align: center;
 }
 
 div#gov-tweets {

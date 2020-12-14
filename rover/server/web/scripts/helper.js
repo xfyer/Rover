@@ -55,3 +55,16 @@ function generateTableFromTweets(tweets) {
         });
     });
 }
+
+// Setup UI Animations and Stuff
+function setupMaterialUI() {
+    $(document).ready(function () {
+        let ripple_buttons = document.querySelectorAll('.ripple-button');
+
+        ripple_buttons.forEach(function(ripple_button) {
+            mdc.ripple.MDCRipple.attachTo(ripple_button);
+        });
+    });
+}
+
+setupMaterialUI()

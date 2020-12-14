@@ -8,7 +8,7 @@ import pytz
 from rover import config
 
 
-def load_page(self):
+def load_page(self, page: str):
     # Site Data
     site_title: str = "Rover"
 
@@ -16,35 +16,19 @@ def load_page(self):
     twitter_title: str = site_title
     twitter_description: str = "Future Analysis Website Here!!!"
 
-    # Current Time
-    current_time: str = f"{datetime.now().astimezone(tz=pytz.UTC):%A, %B, %d %Y at %H:%M:%S.%f %z}"
-
     # HTTP Headers
     self.send_response(200)
     self.send_header("Content-type", "text/html")
     self.end_headers()
 
-    self.wfile.write(bytes(load_text_file("rover/server/web/templates/header.html")
-                           .replace("{site_title}", site_title)
-                           .replace("{twitter_title}", twitter_title)
-                           .replace("{twitter_handle}", config.AUTHOR_TWITTER_HANDLE)
-                           .replace("{twitter_description}", twitter_description)
-                           , "utf-8"))
+    # Header
+    write_header(self=self, site_title=site_title, twitter_title=twitter_title, twitter_description=twitter_description)
 
     # Body
-    self.wfile.write(bytes(f"<p>Request: {self.path}</p>", "utf-8"))
-    self.wfile.write(bytes(f"<p>Current Time: {current_time}</p>", "utf-8"))
+    write_body(self=self, page=page)
 
-    # TODO: Temporary Solution
-    self.wfile.write(bytes(f"<input type='button' value='Download Latest 20 Tweets' onclick='updateTweets();' />", "utf-8"))
-    self.wfile.write(bytes(f"<input type='button' value='Load Cached Tweets (If Any)' onclick='populateTweets();' />", "utf-8"))
-
-    self.wfile.write(bytes(f"<div id='gov-tweets'></div>", "utf-8"))
-    self.wfile.write(bytes(
-        "<h1>Please Visit Me On <a href=\"https://twitter.com/DigitalRoverDog\">Twitter</a> For The Currently Implemented Features!!!</h1>",
-        "utf-8"))
-
-    self.wfile.write(bytes(load_text_file("rover/server/web/templates/footer.html"), "utf-8"))
+    # Footer
+    write_footer(self=self)
 
 
 def load_file(self, path: str, mime_type: str):
@@ -74,15 +58,14 @@ def load_404_page(self, error_code: int = 404):
     self.send_header("Content-type", "text/html")
     self.end_headers()
 
-    self.wfile.write(bytes(load_text_file("rover/server/web/templates/header.html")
-                           .replace("{site_title}", "404 - Page Not Found")
-                           .replace("{twitter_title}", "Page Not Found")
-                           .replace("{twitter_handle}", config.AUTHOR_TWITTER_HANDLE)
-                           .replace("{twitter_description}", "No Page Exists Here")
-                           , "utf-8"))
+    # Header
+    write_header(self=self, site_title="404 - Page Not Found", twitter_title="Page Not Found", twitter_description="No Page Exists Here")
 
-    self.wfile.write(bytes(f"<h1>No Page Found At This Address: {self.path}</h1>", "utf-8"))
-    self.wfile.write(bytes(load_text_file("rover/server/web/templates/footer.html"), "utf-8"))
+    # 404 Page Body - TODO: Add In Optional Variable Substitution Via write_body(...)
+    self.wfile.write(bytes(load_text_file("rover/server/web/pages/errors/404.html").replace("{path}", self.path), "utf-8"))
+
+    # Footer
+    write_footer(self=self)
 
 
 def load_offline_page(self):
@@ -90,12 +73,34 @@ def load_offline_page(self):
     self.send_header("Content-type", "text/html")
     self.end_headers()
 
+    title = "Currently Offline"
+    description = "Cannot Load Page Due Being Offline"
+
+    # Header
+    write_header(self=self, site_title=title, twitter_title=title, twitter_description=description)
+
+    # Body
+    write_body(self=self, page='errors/offline')
+
+    # Footer
+    write_footer(self=self)
+
+
+def write_header(self, site_title: str, twitter_title: str, twitter_description: str):
+    current_time: str = f"{datetime.now().astimezone(tz=pytz.UTC):%A, %B, %d %Y at %H:%M:%S.%f %z}"
+
     self.wfile.write(bytes(load_text_file("rover/server/web/templates/header.html")
-                           .replace("{site_title}", "Currently Offline")
-                           .replace("{twitter_title}", "Currently Offline")
+                           .replace("{site_title}", site_title)
+                           .replace("{twitter_title}", twitter_title)
                            .replace("{twitter_handle}", config.AUTHOR_TWITTER_HANDLE)
-                           .replace("{twitter_description}", "Cannot Load Page Due Being Offline")
+                           .replace("{twitter_description}", twitter_description)
+                           .replace("{current_time}", current_time)
                            , "utf-8"))
 
-    self.wfile.write(bytes(f"<h1>The Current Page Was Not Cached And Cannot Be Loaded Due To Being Offline</h1>", "utf-8"))
+
+def write_body(self, page: str):
+    self.wfile.write(bytes(load_text_file(f"rover/server/web/pages/{page}.html"), "utf-8"))
+
+
+def write_footer(self):
     self.wfile.write(bytes(load_text_file("rover/server/web/templates/footer.html"), "utf-8"))

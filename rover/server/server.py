@@ -5,6 +5,7 @@ import socketserver
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Tuple
+from urllib.parse import urlparse
 
 from doltpy.core.system_helpers import get_logger
 
@@ -62,33 +63,37 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.logger.log(logging.DEBUG, log_format % args)
 
     def do_GET(self):
+        url: str = urlparse(self.path).path.rstrip('/').lower()
+
         try:
-            if self.path.lower().startswith("/api"):
+            if url.startswith("/api"):
                 api.handle_api(self=self)
-            elif self.path.lower() == "/manifest.webmanifest":
+            elif url == "":
+                handler.load_page(self=self, page='latest-tweets')
+            elif url == "/manifest.webmanifest":
                 handler.load_file(self=self, path="rover/server/web/other/manifest.json", mime_type="application/manifest+json")
-            elif self.path.lower() == "/robots.txt":
+            elif url == "/robots.txt":
                 handler.load_file(self=self, path="rover/server/web/other/robots.txt", mime_type="text/plain")
-            elif self.path.lower() == "/favicon.ico":
+            elif url == "/favicon.ico":
                 handler.load_404_page(self=self)
-            elif self.path.lower() == "/images/rover.png":
+            elif url == "/images/rover.png":
                 handler.load_file(self=self, path="rover/server/web/images/Rover.png", mime_type="image/png")
-            elif self.path.lower() == "/images/rover.svg":
+            elif url == "/images/rover.svg":
                 handler.load_file(self=self, path="rover/server/web/images/Rover.svg", mime_type="image/svg+xml")
-            elif self.path.lower() == "/css/stylesheet.css":
+            elif url == "/css/stylesheet.css":
                 handler.load_file(self=self, path="rover/server/web/css/stylesheet.css", mime_type="text/css")
-            elif self.path.lower() == "/scripts/main.js":
+            elif url == "/scripts/main.js":
                 handler.load_file(self=self, path="rover/server/web/scripts/main.js", mime_type="application/javascript")
-            elif self.path.lower() == "/scripts/helper.js":
+            elif url == "/scripts/helper.js":
                 handler.load_file(self=self, path="rover/server/web/scripts/helper.js", mime_type="application/javascript")
-            elif self.path.lower() == "/service-worker.js":
+            elif url == "/service-worker.js":
                 handler.load_file(self=self, path="rover/server/web/scripts/service-worker.js", mime_type="application/javascript")
-            elif self.path.lower() == "/404":
+            elif url == "/404":
                 handler.load_404_page(self=self, error_code=200)
-            elif self.path.lower() == "/offline":
+            elif url == "/offline":
                 handler.load_offline_page(self=self)
             else:
-                handler.load_page(self=self)
+                handler.load_404_page(self=self)
         except BrokenPipeError as e:
             self.logger.debug("{ip_address} Requested {page_url}: {error_message}".format(ip_address=self.address_string(), page_url=self.path, error_message=e))
 

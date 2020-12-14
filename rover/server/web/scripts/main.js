@@ -67,8 +67,7 @@ async function downloadNewTweets() {
     const tweetsCache = await caches.open(tweetCacheName);
 
     // Delete The Cache, Then Re-add
-    // TODO: Figure Out How To Fail Gracefully So That Cache Is Not Wiped On Failed Connection
-    await tweetsCache.delete(tweetAPIURL);
+    // await tweetsCache.delete(tweetAPIURL).then()
     await tweetsCache.add(tweetAPIURL);
 }
 
