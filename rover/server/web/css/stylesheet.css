@@ -6,7 +6,7 @@ body {
 }
 
 table, th, td {
-    border: 1px solid Black;
+    border: 1px solid White;
 }
 
 /* make the table a 100% wide by default */
@@ -28,6 +28,9 @@ table {
     }
 }
 
-#latest-tweets {
-    /* overflow-x: auto; */
+div#latest-tweets {
+    overflow-x: auto;
+
+    /* Adblock Breaks The Div, So It Could Happen To Someone Else */
+    display: block !important;
 }
