@@ -1,4 +1,5 @@
 // Cache Names
+const staticCacheName = 'pages-cache-v1';
 const tweetCacheName = 'tweets-cache-v1';
 
 // Sync Events
@@ -136,3 +137,28 @@ async function unregisterBackgroundSync() {
         })
     }
 }
+
+// Mobile DevTools Console - Activate With /?eruda=true
+function installEruda() {
+    // If True, Running From Service Worker (Or Web Worker)
+    if (self.document === undefined) {
+        return;
+    }
+
+    let src = 'https://cdn.jsdelivr.net/npm/eruda';
+    if (!/eruda=true/.test(window.location) && localStorage.getItem('active-eruda') !== 'true') {
+        return;
+    }
+
+    import(src).then(() => {
+        caches.open(staticCacheName)
+            .then(cache => {
+                cache.add(src).then(() => {
+                    eruda.init();
+                    console.debug("Eruda Saved To Cache!!!")
+                })
+            })
+    });
+}
+
+installEruda();

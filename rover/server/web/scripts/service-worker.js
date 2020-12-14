@@ -19,9 +19,6 @@ const filesToCache = [
     'https://fonts.googleapis.com/icon?family=Material+Icons'
 ];
 
-// Cache Names
-const staticCacheName = 'pages-cache-v1';
-
 // Install Pages To Cache
 self.addEventListener('install', event => {
     console.debug('Attempting To Install Service Worker And Cache Static Assets!!!');
