@@ -1,53 +1,59 @@
 /* Original Choice: https://convertingcolors.com/rgb-color-75_0_130.html */
 /* Web Safe Choice: https://convertingcolors.com/hex-color-660099.html */
+/* Theming Guide For Material Design: https://material.io/develop/web/docs/theming */
+
 body {
-    background-color: black;
+    background-color: black !important;
     color: white;
-}
-
-table, th, td {
-    border: 1px solid White;
-}
-
-table {
-    width: 100%;
-    margin: 0 0 20px 0;
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    border-collapse: collapse;
-    text-align: center;
-}
-
-td, th {
-    font-size: 1em;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 3px 7px 2px 7px;
-    color: #b5e853;
-}
-
-tr td {
-    color: #b5e853;
-    background: rgba(0, 0, 0, .5);
-}
-
-tr:nth-child(even) td {
-    color: #b5e853;
-    background: rgba(0, 0, 0, 0.9);
-}
-
-td {
-    padding: 5px 10px;
-}
-
-/* Note that order does matter in a css file, especially when td, th is trying to set the text color to green instead of white */
-th {
-    border-bottom: 1px dashed #b5e853;
-    padding: 5px 10px;
-    color: #ffffff;
-    background: rgba(0, 130, 0, 1);
-    font-weight: bold; /* Do note, on the table header tag, the font-weight: bold is unnecessary as the table header by default is bold */
-    text-align: center;
+    margin: auto;
 }
 
 div#gov-tweets {
     overflow-x: auto;
+}
+
+.twitter-button {
+    width: 100%;
+}
+
+.twitter-button-div {
+    margin: auto;
+    width: 60%;
+    padding: 10px;
+}
+
+/* Material Design Cards */
+.cards {
+    margin: auto;
+    width: 60%;
+    padding: 10px;
+
+    display: block;
+    /*flex-wrap: wrap;*/
+    /*flex-direction: column;*/
+
+    /*For Debugging Sizing*/
+    /*border: 3px solid green;*/
+}
+
+.tweet-card {
+    min-width: 95%;
+    min-height: 20em;
+
+    margin: 10px;
+    /*box-shadow: none;*/
+    box-sizing: unset;
+}
+
+.card__content {
+    min-height: 20em;
+}
+
+/*.tweet-card > .mdc-card__media {*/
+/*    height: 9em;*/
+/*}*/
+
+.card__text, .card__title, .card__subtitle {
+    margin: 2%;
+    text-align: center
 }

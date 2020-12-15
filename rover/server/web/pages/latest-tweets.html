@@ -1,11 +1,21 @@
-<button class="mdc-button download-button ripple-button" onclick='updateTweets();'>
-    <div class="mdc-button__ripple"></div>
-    <span class="mdc-button__label">Download Latest 20 Tweets</span>
-</button>
+<div class="cards" id="gov-tweets">
+    <div class="mdc-card tweet-card">
+        <div class="mdc-card__primary-action mdc-theme--text-primary-on-dark mdc-theme--primary-bg card__content" tabindex="0">
+            <div>
+                <h2 class="card__title mdc-typography mdc-typography--headline6">No Tweets Currently Loaded</h2>
+            </div>
+            <div class="card__text mdc-typography mdc-typography--body2">Waiting For Tweets To Download (Not Fully Implemented)</div>
+        </div>
+        <div class="mdc-card__actions mdc-theme--text-secondary-on-dark mdc-theme--secondary-bg card__actions">
+            <div class="mdc-card__action-buttons">
+                <button class="mdc-button download-button mdc-card__action mdc-card__action--button mdc-button--raised" onclick='updateTweets();'>  <span class="mdc-button__ripple"></span> Download Latest 20 Tweets</button>
+                <button class="mdc-button load-cache-button mdc-card__action mdc-card__action--button mdc-button--raised" onclick='populateTweets();'>  <span class="mdc-button__ripple"></span> Load Cached Tweets (If Any)</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<button class="mdc-button load-cache-button ripple-button" onclick='populateTweets();'>
-    <div class="mdc-button__ripple"></div>
-    <span class="mdc-button__label">Load Cached Tweets (If Any)</span>
-</button>
-
-<div id="gov-tweets"></div>
+<!-- https://material-components.github.io/material-components-web-catalog/#/component/drawer -->
+<div class="twitter-button-div">
+    <button class="mdc-button twitter-button mdc-card__action mdc-card__action--button mdc-button--raised" onclick="window.open('https://twitter.com/DigitalRoverDog','_blank')">  <span class="mdc-button__ripple"></span> Visit Bot's Twitter For Search (Until Implemented On Site)</button>
+</div>

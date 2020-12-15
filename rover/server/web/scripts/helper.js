@@ -27,34 +27,32 @@ function lookupNameFromID(twitter_account_id) {
 
 function generateTableFromTweets(tweets) {
     $(document).ready(function () {
-        // Reset Table
-        $('#gov-tweets').html("<table id='tweets-table'></table>")
-
-        $('<tr>').append(
-            $('<td>').text("Row"),
-            $('<td>').text("Tweeter"),
-            $('<td>').text("Date"),
-            $('<td>').text("Tweet ID"),
-            $('<td>').text("Text"),
-            $('<td>').text("Device")
-        ).appendTo('#tweets-table');
-
         // Convert String To JSON
         // TODO: This particular function breaks with 22 or more tweets (based on String Size, Not Tweet Count)
         // TODO: It appears that the JSON gets chopped off in JQuery's Internal Code (Only When Embedding JSON)
         response = $.parseJSON(tweets);
 
         $(function() {
+            let cards = ""
             $.each(response.results, function(i, item) {
-                $('<tr>').append(
-                    $('<td>').text(i+1),
-                    $('<td>').text(lookupNameFromID(item.twitter_user_id)),
-                    $('<td>').text(item.date),
-                    $('<td>').html("<a href='https://www.twitter.com/REPLACEME/statuses/" + item.id + "'>" + item.id + "</a>"),
-                    $('<td>').text(item.text),
-                    $('<td>').text(item.device)
-                ).appendTo('#tweets-table');
+                cards += "<div class=\"mdc-card tweet-card\">\n" +
+                    "    <div class=\"mdc-card__primary-action mdc-theme--text-primary-on-dark mdc-theme--primary-bg card__content\" tabindex=\"0\">\n" +
+                    "        <div>\n" +
+                    "            <h2 class=\"card__title mdc-typography mdc-typography--headline6\">Tweet</h2>\n" +
+                    "            <h3 class=\"card__subtitle mdc-typography mdc-typography--subtitle2\">by " + lookupNameFromID(item.twitter_user_id) + " on " + item.date + " UTC</h3>\n" +
+                    "        </div>\n" +
+                    "        <div class=\"card__text mdc-typography mdc-typography--body2\">" + item.text + "</div>\n" +
+                    "    </div>\n" +
+                    "    <div class=\"mdc-card__actions mdc-theme--text-secondary-on-dark mdc-theme--secondary-bg card__actions\">\n" +
+                    "        <div class=\"mdc-card__action-buttons\">\n" +
+                    "            <button class=\"mdc-button mdc-card__action mdc-card__action--button mdc-button--raised\">  <span class=\"mdc-button__ripple\"></span> " + item.device + "</button>\n" +
+                    "            <button class=\"mdc-button mdc-card__action mdc-card__action--button mdc-button--raised\" onclick=\" window.open('https://www.twitter.com/REPLACEME/statuses/" + item.id + "','_blank')\">  <span class=\"mdc-button__ripple\"></span> View Tweet</button>\n" +
+                    "        </div>\n" +
+                    "    </div>\n" +
+                    "</div>"
             });
+
+            $('#gov-tweets').html(cards)
         });
     });
 }
