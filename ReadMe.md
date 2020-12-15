@@ -67,3 +67,5 @@ sudo apt-get install libfreetype6-dev libopenjp2-7 libtiff5
 # You may need to specify --no-cache-dir after install
 pip3 install -r requirements.txt
 ```
+
+<!-- https://web.archive.org/web/*/twitter.com/realdonaldtrump -->

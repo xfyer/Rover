@@ -36,17 +36,23 @@ function setupBackgroundSync() {
 
 // Only Execute When DOM Is Loaded
 function updateTweets() {
-    downloadNewTweets().then(() => {
+    downloadNewTweets().then(ajax => {
         // TODO: Populate Page Here
         console.log("Downloaded Latest Tweets!!!")
 
         // Populate DOM With Tweets
-        populateTweets()
+        populateTweets(ajax)
     })
 }
 
 // This Is A Separate Function So I Can Load Tweets To DOM From Cache Without Waiting To Download New Tweets
-function populateTweets() {
+function populateTweets(json) {
+    if (json !== undefined) {
+        console.debug("Loaded JSON From Ajax Instead of Cache")
+        generateTableFromTweets(json)
+        return
+    }
+
     caches.open(tweetCacheName).then(tweetsCache => {
         tweetsCache.match(tweetAPIURL).then(tweets => {
             if (tweets === undefined) {
@@ -67,11 +73,49 @@ function populateTweets() {
 async function downloadNewTweets() {
     console.log("Downloading New Tweets!!!")
 
-    const tweetsCache = await caches.open(tweetCacheName);
+    let contents;
+    return $.ajax({
+        type: 'GET',
+        url: tweetAPIURL,
+        dataType: "text", // Forces Ajax To Process As String
+        cache: false, // Keep Browser From Caching Data
+        async: true, // Already In Async Function
+        error: function (response) {
+            console.error("Failed To Fetch New Tweets: ", response);
+        },
+        success: function (response) {
+            // console.error(response)
+            contents = response
+        },
+        complete: function (response) {
+            // response.success is for some reason not cooperating
+            console.debug('Successful: ' + response.success);
+            console.debug('Response Code: ' + response.status)
 
-    // Delete The Cache, Then Re-add
-    // await tweetsCache.delete(tweetAPIURL).then()
-    await tweetsCache.add(tweetAPIURL);
+            if (response.status === 200) {
+                console.debug('Downloaded New Tweets!!!');
+
+                caches.open(tweetCacheName).then(cache => {
+                    // Delete The Cache, Then Re-add
+                    cache.delete(tweetAPIURL).then(() => {
+                        const init = {"status": response.status, "statusText": response.statusText,
+                            "headers": {
+                                "Content-Type": "application/json",
+                                "Content-Length": contents.length
+                            }};
+
+                        const results = new Response(contents, init);
+
+                        cache.put(tweetAPIURL, results);
+                    });
+                })
+            } else {
+                console.error("Could Not Download New Tweets!!!")
+                console.debug('Response Code: ' + response.status)
+                console.debug('Response Text: ' + response.statusText)
+            }
+        }
+    });
 }
 
 async function checkAndRegisterBackgroundSync() {
@@ -121,7 +165,7 @@ async function verifyBackgroundSyncRegistration() {
             console.debug("Background Sync Registration Verified!!!")
         } else {
             console.warn("Background Sync Registration Failed!!!")
-            updateTweets()
+            // updateTweets()
         }
     } else {
         // If periodic background sync isn't supported, always update.
