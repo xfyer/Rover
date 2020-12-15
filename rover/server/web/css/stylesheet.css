@@ -18,14 +18,17 @@ div#gov-tweets {
 
 .twitter-button-div {
     margin: auto;
-    width: 60%;
+    min-width: 60%;
+    max-width: 85%;
+
     padding: 10px;
 }
 
 /* Material Design Cards */
 .cards {
     margin: auto;
-    width: 60%;
+    min-width: 60%;
+    max-width: 90%;
     padding: 10px;
 
     display: block;
@@ -37,7 +40,7 @@ div#gov-tweets {
 }
 
 .tweet-card {
-    min-width: 95%;
+    min-width: 90%;
     min-height: 20em;
 
     margin: 10px;
