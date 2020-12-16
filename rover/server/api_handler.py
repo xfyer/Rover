@@ -81,7 +81,7 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
     }
 
     if len(latest_tweets) > 0:
-        response['last_tweet_id'] = latest_tweets[0]['id']
+        response['latest_tweet_id'] = latest_tweets[0]['id']
 
     return response
 
@@ -132,6 +132,14 @@ def convertIDsToString(results: dict):
     for result in results:
         result["twitter_user_id"] = str(result["twitter_user_id"])
         result["id"] = str(result["id"])
+
+        # Account ID of Tweet That Was Retweeted
+        if "retweetedUserId" in result:
+            result["retweetedUserId"] = str(result["retweetedUserId"])
+
+        # Tweet ID of Tweet That Was Retweeted
+        if "retweetedTweetId" in result:
+            result["retweetedTweetId"] = str(result["retweetedTweetId"])
 
     return results
 

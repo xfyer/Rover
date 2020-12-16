@@ -73,10 +73,20 @@ function populateTweets(json) {
 async function downloadNewTweets() {
     console.log("Downloading New Tweets!!!")
 
+    // For Dynamic GET Requests
+    let parameters = {}
+
+    let last_tweet_cookie = getCookie("latest_tweet_id");
+    if (last_tweet_cookie !== null) {
+        // TODO: Properly Implement Handling Appending Tweets
+        // parameters["tweet"] = last_tweet_cookie;
+    }
+
     let contents;
     return $.ajax({
         type: 'GET',
         url: tweetAPIURL,
+        data: parameters,
         dataType: "text", // Forces Ajax To Process As String
         cache: false, // Keep Browser From Caching Data
         async: true, // Already In Async Function
@@ -107,6 +117,14 @@ async function downloadNewTweets() {
                         const results = new Response(contents, init);
 
                         cache.put(tweetAPIURL, results);
+
+                        if (isJSON(contents)) {
+                            // Set Cookie To Make Retrieving New Tweets Only Easier
+                            document.cookie = "latest_tweet_id=" + JSON.parse(contents)["latest_tweet_id"]
+                        } else {
+                            // Clear Cookie If Not JSON
+                            document.cookie = "latest_tweet_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+                        }
                     });
                 })
             } else {
