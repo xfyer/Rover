@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import json
+from typing import Optional
 
 from doltpy.core import Dolt
 
@@ -67,7 +68,13 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
         :param queries: GET Queries Dictionary
         :return: JSON Response
     """
-    latest_tweets: dict = convertIDsToString(results=database.latest_tweets(repo=repo, table=table, max_responses=20))
+    max_responses: int = int(queries['max'][0]) if "max" in queries and validateRangedNumber(value=queries['max'][0],
+                                                                                             min=0, max=20) else 20
+
+    last_tweet_id: Optional[int] = int(queries['tweet'][0]) if "tweet" in queries and validateNumber(value=queries['tweet'][0]) else None
+
+    latest_tweets: dict = convertIDsToString(
+        results=database.latest_tweets(repo=repo, table=table, max_responses=max_responses, last_tweet_id=last_tweet_id))
 
     return {
         "results": latest_tweets
@@ -122,3 +129,22 @@ def convertIDsToString(results: dict):
         result["id"] = str(result["id"])
 
     return results
+
+
+def validateNumber(value: str) -> bool:
+    if not value.isnumeric():
+        return False
+
+    return True
+
+
+def validateRangedNumber(value: str, min: int = 0, max: int = 100) -> bool:
+    if not value.isnumeric():
+        return False
+
+    number: int = int(value)
+
+    if number > max or number < min:
+        return False
+
+    return True

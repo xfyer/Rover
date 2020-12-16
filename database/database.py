@@ -4,17 +4,24 @@ from typing import Optional
 from doltpy.core import Dolt
 
 
-def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[str] = None,
-                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> dict:
-    handle_deleted: str = "and isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
-    handle_deleted: str = handle_deleted if not only_deleted_tweets else "and isDeleted=1"  # Only Show Deleted Tweets
+def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
+                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False, last_tweet_id: Optional[int] = None) -> dict:
 
     handle_account_id: str = "" if account_id is None else f"where twitter_user_id={account_id}"
 
-    # Format Latest Tweets Query - TODO: Fix Where Clause and Sanitize For Twitter User ID
+    clause: str = "where" if (handle_account_id == "") else "and"
+
+    handle_deleted: str = f"{clause} isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
+    handle_deleted: str = handle_deleted if not only_deleted_tweets else "{clause} isDeleted=1"  # Only Show Deleted Tweets
+
+    clause: str = "where" if (handle_deleted == "") else "and"
+
+    handle_last_tweet: str = "" if last_tweet_id is None else f"{clause} id>{last_tweet_id}"
+
+    # Format Latest Tweets Query
     columns: str = "id, twitter_user_id, date, text, device, favorites, retweets, quoteTweets, replies, isRetweet, isDeleted, repliedToTweetId, repliedToUserId, repliedToTweetDate, retweetedTweetId, retweetedUserId, retweetedTweetDate, hasWarning, warningLabel"
     latest_tweets_query = f'''
-        select {columns} from {table} {handle_account_id} {handle_deleted} order by id desc limit {max_responses};
+        select {columns} from {table} {handle_account_id} {handle_deleted} {handle_last_tweet} order by id desc limit {max_responses};
     '''
 
     # Retrieve Latest Tweets
