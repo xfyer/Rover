@@ -76,9 +76,14 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
     latest_tweets: dict = convertIDsToString(
         results=database.latest_tweets(repo=repo, table=table, max_responses=max_responses, last_tweet_id=last_tweet_id))
 
-    return {
+    response: dict = {
         "results": latest_tweets
     }
+
+    if len(latest_tweets) > 0:
+        response['last_tweet_id'] = latest_tweets[0]['id']
+
+    return response
 
 
 def perform_search(repo: Dolt, table: str, queries: dict) -> dict:
