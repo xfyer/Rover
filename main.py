@@ -36,6 +36,12 @@ parser.add_argument("-reply", "--reply", help="Reply to Tweets (Useful For Debug
                     type=bool,
                     action=argparse.BooleanOptionalAction)
 
+parser.add_argument("-rover", "--rover", help="Look For Tweets To Respond To (Useful For Disabling Rover Entirely) (Defaults To True)",
+                    dest='rover',
+                    default=True,
+                    type=bool,
+                    action=argparse.BooleanOptionalAction)
+
 parser.add_argument("-archive", "--archive", help="Archives Tweets (Useful For Debugging Without Commenting Out Archive Class) (Defaults To True)",
                     dest='archive',
                     default=True,
@@ -54,9 +60,12 @@ def main(arguments: argparse.Namespace):
     logging.Logger.setLevel(system_helpers.logger, arguments.logLevel)  # DoltPy's Log Level
     logger.setLevel(arguments.logLevel)  # This Script's Log Level
 
-    rover: Rover = Rover(arguments.reply)
+    if arguments.rover:
+        rover: Rover = Rover(arguments.reply)
+
+    # if arguments.archive:  # TODO: Fix Wait Time To Be Independent Of Archiver
     archiver: Archiver = Archiver()
-    server: WebServer = WebServer(1, "Rover", 1)  # https://www.tutorialspoint.com/python3/python_multithreading.htm
+    server: WebServer = WebServer(1, "Analysis Server", 1)  # https://www.tutorialspoint.com/python3/python_multithreading.htm
 
     # Start Webserver
     if arguments.server:
@@ -67,7 +76,9 @@ def main(arguments: argparse.Namespace):
         if arguments.archive:
             archiver.download_tweets()
 
-        rover.look_for_tweets()
+        # TODO: Reference Rover Just To Keep Intellij Happy (No Need Really Because It's Only Not Referenced When The If Statement is False)
+        if arguments.rover:
+            rover.look_for_tweets()
 
         # TODO: Implement Wait Time Check For Rover
         current_wait_time: int = wait_time

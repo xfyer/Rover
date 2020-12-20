@@ -48,26 +48,35 @@ class Archiver:
     def download_tweets(self):
         self.logger.log(self.INFO_QUIET, "Checking For New Tweets")
 
-        # Get Current President Info
-        president_info = self.lookupCurrentPresident()
-
-        # Sanitize For Empty Results
-        if len(president_info) < 1:
-            self.logger.error("President Info is Missing!!! Returning From Archiver!!!")
-            return
-
-        twitter_user_id = president_info[0]["twitter_user_id"]
+        # # Get Current President Info
+        # president_info = self.lookupCurrentPresident()
+        #
+        # # Sanitize For Empty Results
+        # if len(president_info) < 1:
+        #     self.logger.error("President Info is Missing!!! Returning From Archiver!!!")
+        #     return
+        #
+        # twitter_user_id = president_info[0]["twitter_user_id"]
 
         # Create Table If Not Exists
         self.createTableIfNotExists()
 
-        # Download Tweets From File and Archive
-        self.downloadNewTweets(twitter_user_id=twitter_user_id)
-        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
-        # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        # TODO: Hotfix Until Proper Multi-President Support In Place
+        temporary_twitter_account_ids: dict = {
+            "25073877": "Donald Trump",
+            "1323730225067339784": "Joseph Biden"
+        }
 
-        # TODO: Provide Argument To Disable Committing Data For Debug
-        # return
+        for twitter_user_id in temporary_twitter_account_ids.keys():
+            self.logger.log(self.INFO_QUIET, "Checking For Tweets From {twitter_account}".format(twitter_account=temporary_twitter_account_ids[twitter_user_id]))
+
+            # Download Tweets From File and Archive
+            self.downloadNewTweets(twitter_user_id=twitter_user_id)
+            # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
+            # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+
+            # TODO: Provide Argument To Disable Committing Data For Debug
+            # return
 
         # Commit Changes If Any
         madeCommit = self.commitData(table=config.ARCHIVE_TWEETS_TABLE, message=config.ARCHIVE_TWEETS_COMMIT_MESSAGE)
