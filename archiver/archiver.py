@@ -8,10 +8,10 @@ import os
 import math
 import time
 from json.decoder import JSONDecodeError
-from typing import Optional
+from typing import Optional, TextIO
 
 import pandas as pd
-from doltpy.core import Dolt
+from doltpy.core import Dolt, DoltException
 from doltpy.core.system_helpers import get_logger
 from doltpy.etl import get_df_table_writer
 
@@ -64,13 +64,15 @@ class Archiver:
         # Create Table If Not Exists
         self.createTableIfNotExists()
 
+        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
+        # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        # return
+
         for twitter_account in active_accounts:
             self.logger.log(self.INFO_QUIET, "Checking For Tweets From {twitter_account}".format(twitter_account="{first_name} {last_name}".format(first_name=twitter_account["first_name"], last_name=twitter_account["last_name"])))
 
             # Download Tweets From File and Archive
             self.downloadNewTweets(twitter_user_id=twitter_account["twitter_user_id"])
-            # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
-            # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
 
         # Check Whether Or Not Should Commit Data (Useful For Debugging)
         if not self.commit:
@@ -131,7 +133,13 @@ class Archiver:
             if not isinstance(full_tweet, dict):
                 return
 
-            self.addTweetToDatabase(twitter_user_id=twitter_user_id, data=full_tweet)
+            try:
+                self.addTweetToDatabase(twitter_user_id=twitter_user_id, data=full_tweet)
+            except DoltException as e:
+                self.logger.error(f"Failed To Add Tweet '{tweet['id']}' To Database!!! Exception: '{e}'")
+                tweets_file: TextIO = open(config.FAILED_TWEETS_FILE_PATH, "a+")
+                tweets_file.writelines(json.dumps(tweet) + os.linesep)
+                tweets_file.close()
 
         self.logger.log(self.INFO_QUIET, "Tweet Count: {}".format(tweetCount))
 
@@ -179,7 +187,7 @@ class Archiver:
                     if self.isAlreadyDownloaded(tweet_id=row[0]) and not update_tweets:
                         continue
 
-                    tweet = self.downloadTweet(tweet_id=row[0])
+                    tweet: Optional[dict] = self.downloadTweet(tweet_id=row[0])
 
                     # If Not A Tweet and Instead, The Rate Limit, Just Return
                     if not isinstance(tweet, dict):
@@ -189,7 +197,14 @@ class Archiver:
                         self.logger.log(self.INFO_QUIET, f"Updating Existing Tweet: {row[0]}")
 
                     author_id: Optional[str] = tweet["data"]["author_id"] if "data" in tweet else None
-                    self.addTweetToDatabase(data=tweet, twitter_user_id=author_id)
+
+                    try:
+                        self.addTweetToDatabase(data=tweet, twitter_user_id=author_id)
+                    except DoltException as e:
+                        self.logger.error(f"Failed To Add Tweet '{row[0]}' To Database!!! Exception: '{e}'")
+                        tweets_file: TextIO = open(config.FAILED_TWEETS_FILE_PATH, "a+")
+                        tweets_file.writelines(json.dumps(tweet) + os.linesep)
+                        tweets_file.close()
 
             self.logger.log(self.VERBOSE, f'Processed {line_count} lines.')
 

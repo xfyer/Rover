@@ -14,3 +14,6 @@ ARCHIVE_TWEETS_REPO_BRANCH: str = "master"
 
 # Config Files
 CREDENTIALS_FILE_PATH: str = "credentials.json"
+
+# Failed Tweets File
+FAILED_TWEETS_FILE_PATH: str = os.path.join(ARCHIVE_TWEETS_REPO_PATH, "failed_to_add_tweets.json")
