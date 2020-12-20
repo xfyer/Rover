@@ -79,7 +79,6 @@ class Rover:
             except TwitterError as e:
                 # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
                 if type(e.message) is dict:
-                    # TODO FIX: TypeError: string indices must be integers FOR "Text must be less than or equal to CHARACTER_LIMIT characters."
                     self.logger.error("Twitter Error (Code {code}): {error_message}".format(code=e.message[0]["code"],
                                                                                             error_message=e.message[0]["message"]))
                 else:
