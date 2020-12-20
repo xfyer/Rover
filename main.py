@@ -66,8 +66,9 @@ def main(arguments: argparse.Namespace):
     logging.Logger.setLevel(system_helpers.logger, arguments.logLevel)  # DoltPy's Log Level
     logger.setLevel(arguments.logLevel)  # This Script's Log Level
 
-    if arguments.rover:
-        rover: Rover = Rover(arguments.reply)
+    # TODO: Fix So Responds When Activated
+    # if arguments.rover:
+    rover: Rover = Rover(arguments.reply)
 
     # if arguments.archive:  # TODO: Fix Wait Time To Be Independent Of Archiver
     archiver: Archiver = Archiver(arguments.commit)
@@ -82,7 +83,6 @@ def main(arguments: argparse.Namespace):
         if arguments.archive:
             archiver.download_tweets()
 
-        # TODO: Reference Rover Just To Keep Intellij Happy (No Need Really Because It's Only Not Referenced When The If Statement is False)
         if arguments.rover:
             rover.look_for_tweets()
 
