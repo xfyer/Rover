@@ -48,30 +48,24 @@ class Archiver:
     def download_tweets(self):
         self.logger.log(self.INFO_QUIET, "Checking For New Tweets")
 
-        # # Get Current President Info
-        # president_info = self.lookupCurrentPresident()
-        #
-        # # Sanitize For Empty Results
-        # if len(president_info) < 1:
-        #     self.logger.error("President Info is Missing!!! Returning From Archiver!!!")
-        #     return
-        #
-        # twitter_user_id = president_info[0]["twitter_user_id"]
+        # Get Active Accounts
+        active_accounts = self.lookupActiveAccounts()
+
+        # Sanitize For Empty Results
+        if len(active_accounts) < 1:
+            self.logger.error("No Active Accounts!!! Returning From Archiver!!!")
+            return
+
+        self.logger.debug(f"Active Accounts: {len(active_accounts)}")
 
         # Create Table If Not Exists
         self.createTableIfNotExists()
 
-        # TODO: Hotfix Until Proper Multi-President Support In Place
-        temporary_twitter_account_ids: dict = {
-            "25073877": "Donald Trump",
-            "1323730225067339784": "Joseph Biden"
-        }
-
-        for twitter_user_id in temporary_twitter_account_ids.keys():
-            self.logger.log(self.INFO_QUIET, "Checking For Tweets From {twitter_account}".format(twitter_account=temporary_twitter_account_ids[twitter_user_id]))
+        for twitter_account in active_accounts:
+            self.logger.log(self.INFO_QUIET, "Checking For Tweets From {twitter_account}".format(twitter_account="{first_name} {last_name}".format(first_name=twitter_account["first_name"], last_name=twitter_account["last_name"])))
 
             # Download Tweets From File and Archive
-            self.downloadNewTweets(twitter_user_id=twitter_user_id)
+            self.downloadNewTweets(twitter_user_id=twitter_account["twitter_user_id"])
             # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
             # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
 
@@ -85,28 +79,19 @@ class Archiver:
         if madeCommit:
             self.pushData(branch=config.ARCHIVE_TWEETS_REPO_BRANCH)
 
-    def lookupCurrentPresident(self) -> dict:
-        current_time_query = '''
-            SELECT CURRENT_TIMESTAMP;
+    def lookupActiveAccounts(self) -> dict:
+        active_accounts_query = '''
+            select twitter_user_id, first_name, last_name from presidents where archived=0;
         '''
 
-        # I probably shouldn't be hardcoding the value of the query
-        current_time = self.repo.sql(current_time_query, result_format='csv')[0]['CURRENT_TIMESTAMP()']
-
-        self.logger.debug("Current SQL Time: {}".format(current_time))
-
-        current_president_query = '''
-            select `twitter_user_id` from presidents where `start_term`<'{current_date}' and (`end_term`>'{current_date}' or `end_term` is null) limit 1;
-        '''.format(current_date=current_time)
-
-        return self.repo.sql(current_president_query, result_format='csv')
+        return self.repo.sql(active_accounts_query, result_format='json')["rows"]
 
     def lookupLatestTweet(self, twitter_user_id: str) -> Optional[str]:
         latest_tweet_id_query = f'''
             select id from {config.ARCHIVE_TWEETS_TABLE} where twitter_user_id="{twitter_user_id}" order by id desc limit 1;
         '''
 
-        tweet_id = self.repo.sql(latest_tweet_id_query, result_format='csv')  # 1330487624402935808
+        tweet_id = self.repo.sql(latest_tweet_id_query, result_format='json')["rows"]  # 1330487624402935808
         # tweet_id = "1331393812728573952"
 
         if len(tweet_id) < 1 or 'id' not in tweet_id[0]:
@@ -119,7 +104,7 @@ class Archiver:
         since_id = self.lookupLatestTweet(twitter_user_id=twitter_user_id)
 
         # Sanitization
-        if not isinstance(since_id, str):
+        if not isinstance(since_id, int):
             resp = self.twitter_api.lookup_tweets_via_search(user_id=twitter_user_id)
         else:
             resp = self.twitter_api.lookup_tweets_via_search(user_id=twitter_user_id, since_id=since_id)
@@ -171,7 +156,7 @@ class Archiver:
             SELECT id FROM {config.ARCHIVE_TWEETS_TABLE} where twitter_user_id="{twitter_user_id}" ORDER BY date DESC LIMIT 1
         '''
 
-        return self.repo.sql(latest_tweet, result_format='csv')
+        return self.repo.sql(latest_tweet, result_format='json')["rows"]
 
     def downloadTweetsFromFile(self, path: str, update_tweets: bool = False):
         with open(path, "r") as file:
@@ -238,7 +223,7 @@ class Archiver:
                         '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'],
                                    isDeleted=errorMessage['isDeleted'])
 
-                        self.repo.sql(update_deleted_status, result_format='csv')
+                        self.repo.sql(update_deleted_status)
 
             self.logger.log(self.INFO_QUIET, f'Processed {line_count} lines.')
 
@@ -292,7 +277,7 @@ class Archiver:
             SELECT id, twitter_user_id from {table} where id={id}
         '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'])
 
-        result = self.repo.sql(check_if_already_archived, result_format='csv')
+        result = self.repo.sql(check_if_already_archived, result_format='json')["rows"]
 
         # TODO: Figure Out How To Find Twitter User ID Information For Non-Archived Deleted Tweet
         if len(result) < 1:
@@ -329,7 +314,7 @@ class Archiver:
                        id=errorMessage['id'],
                        isDeleted=errorMessage['isDeleted'])
 
-        self.repo.sql(update_table, result_format='csv')
+        self.repo.sql(update_table)
 
     def addTweetToDatabase(self, twitter_user_id: Optional[str], data: dict):
         if self.is_inaccessible_tweet(data=data):
@@ -561,7 +546,7 @@ class Archiver:
             CREATE TABLE IF NOT EXISTS {config.ARCHIVE_TWEETS_TABLE} ({columns}) {settings}
         '''
 
-        return self.repo.sql(create_table, result_format='csv')
+        return self.repo.sql(create_table)
 
     def commitData(self, table: str, message: str) -> bool:
         # Check to ensure changes need to be added first
