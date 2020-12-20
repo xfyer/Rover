@@ -223,7 +223,7 @@ class Archiver:
                         '''.format(table=config.ARCHIVE_TWEETS_TABLE, id=errorMessage['id'],
                                    isDeleted=errorMessage['isDeleted'])
 
-                        self.repo.sql(update_deleted_status, result_format='json')
+                        self.repo.sql(update_deleted_status, result_format='csv')
 
             self.logger.log(self.INFO_QUIET, f'Processed {line_count} lines.')
 
@@ -314,7 +314,7 @@ class Archiver:
                        id=errorMessage['id'],
                        isDeleted=errorMessage['isDeleted'])
 
-        self.repo.sql(update_table, result_format='json')
+        self.repo.sql(update_table, result_format='csv')
 
     def addTweetToDatabase(self, twitter_user_id: Optional[str], data: dict):
         if self.is_inaccessible_tweet(data=data):
@@ -546,7 +546,7 @@ class Archiver:
             CREATE TABLE IF NOT EXISTS {config.ARCHIVE_TWEETS_TABLE} ({columns}) {settings}
         '''
 
-        return self.repo.sql(create_table, result_format='json')
+        return self.repo.sql(create_table, result_format='csv')
 
     def commitData(self, table: str, message: str) -> bool:
         # Check to ensure changes need to be added first
