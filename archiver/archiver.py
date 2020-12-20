@@ -21,7 +21,7 @@ from config import config as main_config
 
 
 class Archiver:
-    def __init__(self):
+    def __init__(self, commit: bool = True):
         self.logger: logging.Logger = get_logger(__name__)
         self.INFO_QUIET: int = main_config.INFO_QUIET
         self.VERBOSE: int = main_config.VERBOSE
@@ -44,6 +44,9 @@ class Archiver:
 
         # Wait Time Remaining
         self.wait_time: Optional[int] = None
+
+        # Should Commit Data (For Debugging)
+        self.commit: bool = commit
 
     def download_tweets(self):
         self.logger.log(self.INFO_QUIET, "Checking For New Tweets")
@@ -69,8 +72,10 @@ class Archiver:
             # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
             # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
 
-            # TODO: Provide Argument To Disable Committing Data For Debug
-            # return
+        # Check Whether Or Not Should Commit Data (Useful For Debugging)
+        if not self.commit:
+            self.logger.debug("Returning Without Commit Because Commit Disabled By Flags!!!")
+            return
 
         # Commit Changes If Any
         madeCommit = self.commitData(table=config.ARCHIVE_TWEETS_TABLE, message=config.ARCHIVE_TWEETS_COMMIT_MESSAGE)

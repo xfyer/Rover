@@ -30,7 +30,7 @@ parser.add_argument("-wait", "--wait", help="Set Delay Before Checking For New T
                     default=1,
                     type=int)
 
-parser.add_argument("-reply", "--reply", help="Reply to Tweets (Useful For Debugging Without Commenting Out PostUpdate Code) (Defaults To True)",
+parser.add_argument("-reply", "--reply", help="Reply to Tweets (Useful For Debugging) (Defaults To True)",
                     dest='reply',
                     default=True,
                     type=bool,
@@ -42,14 +42,20 @@ parser.add_argument("-rover", "--rover", help="Look For Tweets To Respond To (Us
                     type=bool,
                     action=argparse.BooleanOptionalAction)
 
-parser.add_argument("-archive", "--archive", help="Archives Tweets (Useful For Debugging Without Commenting Out Archive Class) (Defaults To True)",
+parser.add_argument("-archive", "--archive", help="Archives Tweets (Useful For Debugging) (Defaults To True)",
                     dest='archive',
                     default=True,
                     type=bool,
                     action=argparse.BooleanOptionalAction)
 
-parser.add_argument("-server", "--server", help="Run webserver (Defaults To True)",
+parser.add_argument("-server", "--server", help="Run Webserver (Defaults To True)",
                     dest='server',
+                    default=True,
+                    type=bool,
+                    action=argparse.BooleanOptionalAction)
+
+parser.add_argument("-commit", "--commit", help="Commit Tweets To Repo When Archived (Useful For Debugging) (Defaults To True)",
+                    dest='commit',
                     default=True,
                     type=bool,
                     action=argparse.BooleanOptionalAction)
@@ -64,7 +70,7 @@ def main(arguments: argparse.Namespace):
         rover: Rover = Rover(arguments.reply)
 
     # if arguments.archive:  # TODO: Fix Wait Time To Be Independent Of Archiver
-    archiver: Archiver = Archiver()
+    archiver: Archiver = Archiver(arguments.commit)
     server: WebServer = WebServer(1, "Analysis Server", 1)  # https://www.tutorialspoint.com/python3/python_multithreading.htm
 
     # Start Webserver

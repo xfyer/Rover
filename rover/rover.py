@@ -74,15 +74,16 @@ class Rover:
 
             try:
                 handle_commands.process_command(api=api, status=mention,
-                                         info_level=self.INFO_QUIET,
-                                         verbose_level=self.VERBOSE)
-
+                                                info_level=self.INFO_QUIET,
+                                                verbose_level=self.VERBOSE)
             except TwitterError as e:
                 # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
-                error: json = e.message[0]
-                # TODO FIX: TypeError: string indices must be integers FOR "Text must be less than or equal to CHARACTER_LIMIT characters."
-                self.logger.error("Twitter Error (Code {code}): {error_message}".format(code=error["code"],
-                                                                                        error_message=error["message"]))
+                if type(e.message) is dict:
+                    # TODO FIX: TypeError: string indices must be integers FOR "Text must be less than or equal to CHARACTER_LIMIT characters."
+                    self.logger.error("Twitter Error (Code {code}): {error_message}".format(code=e.message[0]["code"],
+                                                                                            error_message=e.message[0]["message"]))
+                else:
+                    self.logger.error("Twitter Error: {error_message}".format(error_message=e.message))
 
             latest_status = mention.id
 

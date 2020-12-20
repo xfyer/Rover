@@ -13,7 +13,6 @@ from rover.search_tweets import SafeDict, get_search_keywords, convert_search_to
 def search_text(api: twitter.Api, status: twitter.models.Status,
                 INFO_QUIET: int = logging.INFO + 1,
                 VERBOSE: int = logging.DEBUG - 1):
-
     # Broken For Some Reason
     # select id, text from trump where text COLLATE utf8mb4_unicode_ci like '%sleepy%joe%' order by id desc limit 10;
     # select count(id) from trump where text COLLATE utf8mb4_unicode_ci like '%sleepy%joe%';
@@ -52,13 +51,16 @@ def search_text(api: twitter.Api, status: twitter.models.Status,
 
     # Check To Make Sure Results Found
     if len(search_results) < 1:
-        no_tweets_found_status = "@{user} No results found for \"{search_phrase}\"".format(user=status.user.screen_name,
-                                                                                           search_phrase=original_phrase)
+        no_tweets_found_status = "@{user} No results found for \"{search_phrase}\"".format_map(
+            SafeDict(user=status.user.screen_name))
+
+        possibly_truncated_no_tweets_found_status: str = truncate_if_needed(original_phrase=original_phrase, new_status=no_tweets_found_status)
 
         if config.REPLY:
-            api.PostUpdate(in_reply_to_status_id=status.id, status=no_tweets_found_status)
+            api.PostUpdate(in_reply_to_status_id=status.id, status=possibly_truncated_no_tweets_found_status)
 
-        logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=no_tweets_found_status))
+        logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=possibly_truncated_no_tweets_found_status))
+        logger.debug("Status Length: {length}".format(length=len(possibly_truncated_no_tweets_found_status)))
         return
 
     search_post_response = search_results[0]
@@ -85,19 +87,22 @@ def search_text(api: twitter.Api, status: twitter.models.Status,
             user=status.user.screen_name, status_link=url, screen_name=author,
             search_count=count, word_times=word_times))
 
+    possibly_truncated_status: str = truncate_if_needed(original_phrase=original_phrase, new_status=new_status)
+
+    # CHARACTER_LIMIT
+    if config.REPLY:
+        api.PostUpdates(in_reply_to_status_id=status.id, status=possibly_truncated_status, continuation='\u2026')
+
+    logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=possibly_truncated_status))
+    logger.debug("Status Length: {length}".format(length=len(possibly_truncated_status)))
+
+
+def truncate_if_needed(original_phrase: str, new_status: str) -> str:
     truncate_amount = abs(
         (len('\u2026') + len("{search_phrase}") + twitter.api.CHARACTER_LIMIT - len(new_status)) - len(original_phrase))
 
     # Don't Put Ellipses If Search Is Not Truncated
     if (len(original_phrase) + len(new_status) + len('\u2026') - len("{search_phrase}")) >= twitter.api.CHARACTER_LIMIT:
-        new_status = new_status.format(search_phrase=(original_phrase[:truncate_amount] + '\u2026'))
-    else:
-        new_status = new_status.format(search_phrase=original_phrase)
+        return new_status.format(search_phrase=(original_phrase[:truncate_amount] + '\u2026'))
 
-    logger.debug("Status Length: {length}".format(length=len(new_status)))
-
-    # CHARACTER_LIMIT
-    if config.REPLY:
-        api.PostUpdates(in_reply_to_status_id=status.id, status=new_status, continuation='\u2026')
-
-    logger.log(INFO_QUIET, "Sending Status: {new_status}".format(new_status=new_status))
+    return new_status.format(search_phrase=original_phrase)
