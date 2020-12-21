@@ -2,63 +2,99 @@
 from typing import Optional
 
 from doltpy.core import Dolt
+from pypika import Query, Table, Order
+from pypika.functions import Lower, Count
+from pypika.queries import QueryBuilder
 
 
 def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
-                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False, last_tweet_id: Optional[int] = None) -> dict:
+                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False,
+                  last_tweet_id: Optional[int] = None) -> dict:
 
-    handle_account_id: str = "" if account_id is None else f"where twitter_user_id={account_id}"
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id, tweets.twitter_user_id, tweets.date,
+                tweets.text, tweets.device, tweets.favorites,
+                tweets.retweets, tweets.quoteTweets, tweets.replies,
+                tweets.isRetweet, tweets.isDeleted, tweets.repliedToTweetId,
+                tweets.repliedToUserId, tweets.repliedToTweetDate,
+                tweets.retweetedTweetId, tweets.retweetedUserId,
+                tweets.retweetedTweetDate, tweets.hasWarning, tweets.warningLabel) \
+        .orderby(tweets.id, order=Order.desc) \
+        .limit(max_responses)
 
-    clause: str = "where" if (handle_account_id == "") else "and"
+    if account_id is not None:
+        # Show Results For Specific Account
+        query: QueryBuilder = query.where(tweets.twitter_user_id, account_id)
 
-    handle_deleted: str = f"{clause} isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
-    handle_deleted: str = handle_deleted if not only_deleted_tweets else "{clause} isDeleted=1"  # Only Show Deleted Tweets
+    if last_tweet_id is not None:
+        query: QueryBuilder = query.where(tweets.id > last_tweet_id)
 
-    clause: str = "where" if (handle_deleted == "") else "and"
-
-    handle_last_tweet: str = "" if last_tweet_id is None else f"{clause} id>{last_tweet_id}"
-
-    # Format Latest Tweets Query
-    columns: str = "id, twitter_user_id, date, text, device, favorites, retweets, quoteTweets, replies, isRetweet, isDeleted, repliedToTweetId, repliedToUserId, repliedToTweetDate, retweetedTweetId, retweetedUserId, retweetedTweetDate, hasWarning, warningLabel"
-    latest_tweets_query = f'''
-        select {columns} from {table} {handle_account_id} {handle_deleted} {handle_last_tweet} order by id desc limit {max_responses};
-    '''
+    if hide_deleted_tweets:
+        # Filter Out Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 0)
+    elif only_deleted_tweets:
+        # Only Show Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 1)
 
     # Retrieve Latest Tweets
-    return repo.sql(query=latest_tweets_query, result_format="json")["rows"]
+    return repo.sql(query=query.get_sql(quote_char=None), result_format="json")["rows"]
 
 
-def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[str] = None,
+def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
                   hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> dict:
-    handle_deleted: str = "and isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
-    handle_deleted: str = handle_deleted if not only_deleted_tweets else "and isDeleted=1"  # Only Show Deleted Tweets
 
-    handle_account_id: str = "" if account_id is None else f"and twitter_user_id={account_id}"
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id, tweets.twitter_user_id, tweets.date,
+                tweets.text, tweets.device, tweets.favorites,
+                tweets.retweets, tweets.quoteTweets, tweets.replies,
+                tweets.isRetweet, tweets.isDeleted, tweets.repliedToTweetId,
+                tweets.repliedToUserId, tweets.repliedToTweetDate,
+                tweets.retweetedTweetId, tweets.retweetedUserId,
+                tweets.retweetedTweetDate, tweets.hasWarning, tweets.warningLabel) \
+        .orderby(tweets.id, order=Order.desc) \
+        .limit(max_responses) \
+        .where(Lower(tweets.text).like(search_phrase.lower()))  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
 
-    # Format Search Query - TODO: Sanitize For Twitter User ID
-    search_query = f'''
-        select * from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}') {handle_deleted} {handle_account_id} order by id desc limit {max_responses};
-    '''
+    if account_id is not None:
+        # Show Results For Specific Account
+        query: QueryBuilder = query.where(tweets.twitter_user_id, account_id)
+
+    if hide_deleted_tweets:
+        # Filter Out Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 0)
+    elif only_deleted_tweets:
+        # Only Show Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 1)
 
     # Perform Search Query
     # Use Commit https://github.com/dolthub/dolt/commit/6089d7e15d5fe4b02a4dc13630289baee7f937b0 Until JSON Escaping Bug Is Fixed
-    return repo.sql(query=search_query, result_format="json")["rows"]
+    return repo.sql(query=query.get_sql(quote_char=None), result_format="json")["rows"]
 
 
-def count_tweets(search_phrase: str, repo: Dolt, table: str, account_id: Optional[str] = None,
+def count_tweets(search_phrase: str, repo: Dolt, table: str, account_id: Optional[int] = None,
                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> int:
-    handle_deleted: str = "and isDeleted=0" if hide_deleted_tweets else ""  # Determine If Should Filter Out Deleted Tweets
-    handle_deleted: str = handle_deleted if not only_deleted_tweets else "and isDeleted=1"  # Only Show Deleted Tweets
 
-    handle_account_id: str = "" if account_id is None else f"and twitter_user_id={account_id}"
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(Count(tweets.id)) \
+        .orderby(tweets.id, order=Order.desc) \
+        .where(Lower(tweets.text).like(search_phrase.lower()))  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
 
-    # Format Count Search Query - TODO: Sanitize For Twitter User ID
-    count_search_query = f'''
-        select count(id) from {table} where lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}') {handle_deleted} {handle_account_id};
-    '''
+    if account_id is not None:
+        # Show Results For Specific Account
+        query: QueryBuilder = query.where(tweets.twitter_user_id, account_id)
+
+    if hide_deleted_tweets:
+        # Filter Out Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 0)
+    elif only_deleted_tweets:
+        # Only Show Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 1)
 
     # Perform Count Query
-    count_result = repo.sql(query=count_search_query, result_format="json")["rows"]
+    count_result = repo.sql(query=query.get_sql(quote_char=None), result_format="json")["rows"]
 
     # Retrieve Count of Tweets From Search
     for header in count_result[0]:
