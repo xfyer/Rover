@@ -61,8 +61,9 @@ class Archiver:
 
         self.logger.debug(f"Active Accounts: {len(active_accounts)}")
 
+        # TODO: FIX ME
         # Create Table If Not Exists
-        database.createTableIfNotExists(repo=self.repo, table=config.ARCHIVE_TWEETS_TABLE)
+        # database.createTableIfNotExists(repo=self.repo, table=config.ARCHIVE_TWEETS_TABLE)
 
         # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=False, media_api=False)
         # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))

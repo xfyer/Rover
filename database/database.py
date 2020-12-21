@@ -120,7 +120,7 @@ def lookupLatestTweetId(repo: Dolt, table: str, twitter_user_id: str) -> Optiona
     query: QueryBuilder = Query.from_(tweets) \
         .select(tweets.id) \
         .where(tweets.twitter_user_id == twitter_user_id) \
-        .orderby(tweets.id, Order.desc) \
+        .orderby(tweets.id, order=Order.desc) \
         .limit(1)
 
     tweet_id = repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
