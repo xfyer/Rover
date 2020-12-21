@@ -92,7 +92,7 @@ class Archiver:
 
     def lookupActiveAccounts(self) -> dict:
         active_accounts_query = '''
-            select twitter_user_id, first_name, last_name from presidents where archived=0;
+            select twitter_user_id, first_name, last_name from government where archived=0;
         '''
 
         return self.repo.sql(active_accounts_query, result_format='json')["rows"]
