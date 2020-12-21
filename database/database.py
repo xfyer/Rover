@@ -1,16 +1,17 @@
 #!/usr/bin/python
+import json
 from typing import Optional
 
 from doltpy.core import Dolt
+from mysql.connector import conversion
 from pypika import Query, Table, Order
 from pypika.functions import Lower, Count
-from pypika.queries import QueryBuilder
+from pypika.queries import QueryBuilder, CreateQueryBuilder, Column
 
 
 def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
                   hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False,
                   last_tweet_id: Optional[int] = None) -> dict:
-
     tweets: Table = Table(table)
     query: QueryBuilder = Query.from_(tweets) \
         .select(tweets.id, tweets.twitter_user_id, tweets.date,
@@ -43,7 +44,6 @@ def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: O
 
 def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
                   hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> dict:
-
     tweets: Table = Table(table)
     query: QueryBuilder = Query.from_(tweets) \
         .select(tweets.id, tweets.twitter_user_id, tweets.date,
@@ -55,7 +55,9 @@ def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int
                 tweets.retweetedTweetDate, tweets.hasWarning, tweets.warningLabel) \
         .orderby(tweets.id, order=Order.desc) \
         .limit(max_responses) \
-        .where(Lower(tweets.text).like(search_phrase.lower()))  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
+        .where(Lower(tweets.text).like(
+        search_phrase.lower())  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
+    )
 
     if account_id is not None:
         # Show Results For Specific Account
@@ -75,12 +77,13 @@ def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int
 
 def count_tweets(search_phrase: str, repo: Dolt, table: str, account_id: Optional[int] = None,
                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> int:
-
     tweets: Table = Table(table)
     query: QueryBuilder = Query.from_(tweets) \
         .select(Count(tweets.id)) \
         .orderby(tweets.id, order=Order.desc) \
-        .where(Lower(tweets.text).like(search_phrase.lower()))  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
+        .where(Lower(tweets.text).like(
+        search_phrase.lower())  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
+    )
 
     if account_id is not None:
         # Show Results For Specific Account
@@ -101,3 +104,138 @@ def count_tweets(search_phrase: str, repo: Dolt, table: str, account_id: Optiona
         return count_result[0][header]
 
     return -1
+
+
+def lookupActiveAccounts(repo: Dolt) -> dict:
+    government: Table = Table("government")
+    query: QueryBuilder = Query.from_(government) \
+        .select(government.twitter_user_id, government.first_name, government.last_name) \
+        .where(government.archived == 0)
+
+    return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+
+def lookupLatestTweetId(repo: Dolt, table: str, twitter_user_id: str) -> Optional[int]:
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id) \
+        .where(tweets.twitter_user_id == twitter_user_id) \
+        .orderby(tweets.id, Order.desc) \
+        .limit(1)
+
+    tweet_id = repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+    if len(tweet_id) < 1 or 'id' not in tweet_id[0]:
+        return None
+
+    return tweet_id[0]['id']
+
+
+def retrieveTweet(repo: Dolt, table: str, tweet_id: str,
+                  hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> Optional[dict]:
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id) \
+        .where(tweets.id == tweet_id) \
+        .limit(1)
+
+    if hide_deleted_tweets:
+        # Filter Out Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 0)
+    elif only_deleted_tweets:
+        # Only Show Deleted Tweets
+        query: QueryBuilder = query.where(tweets.isDeleted == 1)
+
+    return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+
+def isAlreadyArchived(repo: Dolt, table: str, tweet_id: str,
+                      hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> bool:
+    result: Optional[dict] = retrieveTweet(repo=repo, table=table, tweet_id=tweet_id,
+                                           hide_deleted_tweets=hide_deleted_tweets,
+                                           only_deleted_tweets=only_deleted_tweets)
+
+    if len(result) < 1:
+        return False
+
+    return True
+
+
+def retrieveTweetJSON(repo: Dolt, table: str, tweet_id: str) -> Optional[str]:
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id, tweets.json) \
+        .where(tweets.id == tweet_id) \
+        .limit(1)
+
+    result = repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+    if len(result) < 1:
+        return None
+
+    return result[0]
+
+
+def setDeletedStatus(repo: Dolt, table: str, tweet_id: str, deleted: bool):
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.update(tweets) \
+        .set(tweets.isDeleted, int(deleted)) \
+        .where(tweets.id == tweet_id)
+
+    repo.sql(query=query.get_sql(quote_char=None), result_format='csv')
+
+
+def updateTweetWithAPIV1(repo: Dolt, table: str, tweet_id: str, data: dict):
+    sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
+    escaped_json: str = sql_converter.escape(value=json.dumps(data))
+
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.update(tweets) \
+        .set(tweets.json_v1, escaped_json) \
+        .where(tweets.id == tweet_id)
+
+    repo.sql(query=query.get_sql(quote_char=None), result_format="csv")
+
+
+def createTableIfNotExists(repo: Dolt, table: str):
+    query: CreateQueryBuilder = Query.create_table(table=table) \
+                                     .columns(
+                                        Column("id", "bigint unsigned", nullable=False),
+                                        Column("twitter_user_id", "bigint unsigned", nullable=False),
+
+                                        Column("date", "datetime", nullable=False),
+                                        Column("text", "longtext", nullable=False),
+                                        Column("device", "longtext", nullable=False),
+
+                                        Column("favorites", "bigint unsigned", nullable=False),
+                                        Column("retweets", "bigint unsigned", nullable=False),
+                                        Column("quoteTweets", "bigint unsigned"),
+                                        Column("replies", "bigint unsigned"),
+
+                                        Column("isRetweet", "tinyint", nullable=False),
+                                        Column("isDeleted", "tinyint", nullable=False),
+
+                                        Column("repliedToTweetId", "bigint unsigned"),
+                                        Column("repliedToUserId", "bigint unsigned"),
+                                        Column("repliedToTweetDate", "datetime"),
+
+                                        Column("retweetedTweetId", "bigint unsigned"),
+                                        Column("retweetedUserId", "bigint unsigned"),
+                                        Column("retweetedTweetDate", "datetime"),
+
+                                        Column("expandedUrls", "longtext"),
+
+                                        Column("json", "longtext"),
+                                        Column("json_v1", "longtext"),
+                                        Column("notes", "longtext")
+                                     ).primary_key("id")
+
+    # TODO: Figure Out How To Add The Below Parameters
+    # --------------------------------------------------------------------------------------------------------------
+    # KEY `twitter_user_id_idx` (`twitter_user_id`),
+    # CONSTRAINT `twitter_user_id_ref` FOREIGN KEY (`twitter_user_id`) REFERENCES `government` (`twitter_user_id`)
+    # --------------------------------------------------------------------------------------------------------------
+    # ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    # --------------------------------------------------------------------------------------------------------------
+
+    repo.sql(query=query.get_sql(quote_char=None), result_format="csv")

@@ -69,7 +69,7 @@ class TweetAPI2:
         api_url = 'https://api.twitter.com/1.1/statuses/user_timeline.json'
         return requests.get(api_url, params=params, auth=self.auth)
 
-    def lookup_tweets_via_search(self, user_id: str = None, screen_name: str = None, since_id: str = None):
+    def lookup_tweets_via_search(self, user_id: str = None, screen_name: str = None, since_id: int = None):
         # https://api.twitter.com/2/tweets/search/recent?query=from:25073877&max_results=100&since_id=1336411597330391045
 
         params = {
