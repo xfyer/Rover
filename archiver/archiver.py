@@ -193,6 +193,7 @@ class Archiver:
 
                     # Check If Should Be Updating Existing Tweets (Meant To Save Rate Limit For Batch Operations)
                     if self.isAlreadyDownloaded(tweet_id=row[0]) and not update_tweets:
+                        self.logger.log(self.INFO_QUIET, f"Skipping Existing Tweet: {row[0]}")
                         continue
 
                     tweet: Optional[dict] = self.downloadTweet(tweet_id=row[0], media_api=media_api)
