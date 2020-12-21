@@ -65,7 +65,7 @@ class Archiver:
         # Create Table If Not Exists
         self.createTableIfNotExists()
 
-        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True, media_api=True)
+        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=False, media_api=False)
         # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
         # os.system(f'cd {config.ARCHIVE_TWEETS_REPO_PATH} && dolt sql -q "select id from tweets where json like \\"%media_key%\\" and json_v1 is null order by id desc;" -r csv > download-ids.csv')
         # return
@@ -203,6 +203,8 @@ class Archiver:
 
                     if update_tweets:
                         self.logger.log(self.INFO_QUIET, f"Updating Existing Tweet: {row[0]}")
+                    else:
+                        self.logger.log(self.INFO_QUIET, f"Adding New Tweet: {row[0]}")
 
                     author_id: Optional[str] = tweet["data"]["author_id"] if "data" in tweet else None
 
