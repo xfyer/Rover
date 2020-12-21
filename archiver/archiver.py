@@ -14,6 +14,7 @@ import pandas as pd
 from doltpy.core import Dolt, DoltException
 from doltpy.core.system_helpers import get_logger
 from doltpy.etl import get_df_table_writer
+from mysql.connector import conversion
 
 from archiver import config
 from archiver.tweet_api_two import BearerAuth, TweetAPI2
@@ -64,12 +65,15 @@ class Archiver:
         # Create Table If Not Exists
         self.createTableIfNotExists()
 
-        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True)
+        # self.downloadTweetsFromFile(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'), update_tweets=True, media_api=True)
         # self.updateTweetsIfDeleted(path=os.path.join(config.ARCHIVE_TWEETS_REPO_PATH, 'download-ids.csv'))
+        # os.system(f'cd {config.ARCHIVE_TWEETS_REPO_PATH} && dolt sql -q "select id from tweets where json like \\"%media_key%\\" and json_v1 is null order by id desc;" -r csv > download-ids.csv')
         # return
 
         for twitter_account in active_accounts:
-            self.logger.log(self.INFO_QUIET, "Checking For Tweets From {twitter_account}".format(twitter_account="{first_name} {last_name}".format(first_name=twitter_account["first_name"], last_name=twitter_account["last_name"])))
+            self.logger.log(self.INFO_QUIET, "Checking For Tweets From {twitter_account}".format(
+                twitter_account="{first_name} {last_name}".format(first_name=twitter_account["first_name"],
+                                                                  last_name=twitter_account["last_name"])))
 
             # Download Tweets From File and Archive
             self.downloadNewTweets(twitter_user_id=twitter_account["twitter_user_id"])
@@ -143,8 +147,12 @@ class Archiver:
 
         self.logger.log(self.INFO_QUIET, "Tweet Count: {}".format(tweetCount))
 
-    def downloadTweet(self, tweet_id: str) -> Optional[dict]:
-        resp = self.twitter_api.get_tweet(tweet_id=tweet_id)
+    def downloadTweet(self, tweet_id: str, media_api: bool = False) -> Optional[dict]:
+        if media_api:
+            resp = self.twitter_api.get_tweet_v1(tweet_id=tweet_id)
+        else:
+            resp = self.twitter_api.get_tweet(tweet_id=tweet_id)
+
         headers = resp.headers
         rateLimitResetTime = headers['x-rate-limit-reset']
 
@@ -171,7 +179,7 @@ class Archiver:
 
         return self.repo.sql(latest_tweet, result_format='json')["rows"]
 
-    def downloadTweetsFromFile(self, path: str, update_tweets: bool = False):
+    def downloadTweetsFromFile(self, path: str, update_tweets: bool = False, media_api: bool = False):
         with open(path, "r") as file:
             csv_reader = csv.reader(file, delimiter=',')
             line_count = -1
@@ -187,7 +195,7 @@ class Archiver:
                     if self.isAlreadyDownloaded(tweet_id=row[0]) and not update_tweets:
                         continue
 
-                    tweet: Optional[dict] = self.downloadTweet(tweet_id=row[0])
+                    tweet: Optional[dict] = self.downloadTweet(tweet_id=row[0], media_api=media_api)
 
                     # If Not A Tweet and Instead, The Rate Limit, Just Return
                     if not isinstance(tweet, dict):
@@ -199,7 +207,10 @@ class Archiver:
                     author_id: Optional[str] = tweet["data"]["author_id"] if "data" in tweet else None
 
                     try:
-                        self.addTweetToDatabase(data=tweet, twitter_user_id=author_id)
+                        if media_api:
+                            self.update_tweet_with_v1_api_info(tweet_id=row[0], data=tweet)
+                        else:
+                            self.addTweetToDatabase(data=tweet, twitter_user_id=author_id)
                     except DoltException as e:
                         self.logger.error(f"Failed To Add Tweet '{row[0]}' To Database!!! Exception: '{e}'")
                         tweets_file: TextIO = open(config.FAILED_TWEETS_FILE_PATH, "a+")
@@ -301,7 +312,8 @@ class Archiver:
 
         # TODO: Figure Out How To Find Twitter User ID Information For Non-Archived Deleted Tweet
         if len(result) < 1:
-            self.logger.warning("Cannot Insert Tweet {id} Because Of Missing Twitter Account ID Information!!!".format(id=errorMessage['id']))
+            self.logger.warning("Cannot Insert Tweet {id} Because Of Missing Twitter Account ID Information!!!".format(
+                id=errorMessage['id']))
             return
 
         # TODO: Figure Out How To Determine Between Inserting New Tweet and Updating Old Tweet (And Change For Twitter User ID Information)
@@ -335,6 +347,20 @@ class Archiver:
                        isDeleted=errorMessage['isDeleted'])
 
         self.repo.sql(update_table, result_format='csv')
+
+    def update_tweet_with_v1_api_info(self, tweet_id: str, data: dict):
+        sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
+        escaped_json: str = sql_converter.escape(value=json.dumps(data))
+
+        add_media_json: str = '''
+            UPDATE {table}
+            SET json_v1="{v1_json}"
+            WHERE id="{tweet_id}";
+        '''.format(table=config.ARCHIVE_TWEETS_TABLE, tweet_id=tweet_id, v1_json=escaped_json)
+
+        self.logger.log(self.VERBOSE, f"Media API: {add_media_json}")
+
+        self.repo.sql(add_media_json, result_format="csv")
 
     def addTweetToDatabase(self, twitter_user_id: Optional[str], data: dict):
         if self.is_inaccessible_tweet(data=data):
@@ -529,7 +555,7 @@ class Archiver:
 
     def writeData(self, dataFrame: pd.DataFrame, requiredKeys: list):
         # Prepare Data Writer
-        raw_data_writer = get_df_table_writer('tweets', lambda: dataFrame, requiredKeys)
+        raw_data_writer = get_df_table_writer(config.ARCHIVE_TWEETS_TABLE, lambda: dataFrame, requiredKeys)
 
         # Write Data To Repo
         raw_data_writer(self.repo)

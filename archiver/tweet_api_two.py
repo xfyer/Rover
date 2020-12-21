@@ -35,6 +35,16 @@ class TweetAPI2:
         api_url = 'https://api.twitter.com/2/tweets/{}'.format(tweet_id)
         return requests.get(api_url, params=params, auth=self.auth)
 
+    def get_tweet_v1(self, tweet_id: str) -> Response:
+        params = {
+            "id": tweet_id,
+            "tweet_mode": "extended"
+        }
+
+        # 1340760721618063361 = id
+        api_url = 'https://api.twitter.com/1.1/statuses/show.json'
+        return requests.get(api_url, params=params, auth=self.auth)
+
     def lookup_tweets_via_timeline(self, user_id: str = None, screen_name: str = None, since_id: str = None) -> Response:
         params = {
             "include_rts": "true",
