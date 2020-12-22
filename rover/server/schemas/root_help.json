@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/product.schema.json",
+  "title": "Available Endpoints",
+  "description": "List Of Available Endpoints",
+  "type": "object",
+  "properties": {
+    "endpoints": {
+      "description": "Available Endpoints",
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "uniqueItems": true,
+      "properties": {
+        "__comment": "TODO: Change Endpoint Format",
+        "url": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        },
+        "description": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        }
+      },
+      "required": [ "url", "description" ]
+    },
+    "notes": {
+      "description": "Human Readable Note About Endpoints",
+      "type": "string"
+    }
+  },
+  "required": [ "endpoints", "notes" ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/product.schema.json",
+  "title": "Error Codes",
+  "description": "A list of error codes",
+  "type": "object",
+  "properties": {
+    "__comment": "Organize Error Codes For Lookup - Potentially Making It Automatically Translatable",
+    "error": {
+      "description": "Human Readable Error Message",
+      "type": "string"
+    },
+    "code": {
+      "description": "Machine Readable Error Code",
+      "type": "integer"
+    }
+  },
+  "required": [ "error", "code" ]
+}

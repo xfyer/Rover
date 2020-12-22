@@ -14,6 +14,7 @@ from archiver import config
 from config import config as main_config
 import rover.server.page_handler as handler
 import rover.server.api_handler as api
+import rover.server.schema_handler as schema
 
 threadLock: threading.Lock = threading.Lock()
 
@@ -86,6 +87,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         try:
             if url.startswith("/api"):
                 api.handle_api(self=self)
+            # elif url.startswith("/schema"):
+            #     schema.handle_schema(self=self)
             elif url == "":
                 handler.load_page(self=self, page='latest-tweets')
             elif url == "/manifest.webmanifest":

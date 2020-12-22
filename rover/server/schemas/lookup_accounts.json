@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/product.schema.json",
+  "title": "Requested Twitter Accounts",
+  "description": "Information From Requested Twitter Accounts In Database",
+  "type": "object",
+  "properties": {
+    "accounts": {
+      "description": "Information From Requested Twitter Accounts",
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": "TODO: Set A Limit And Fix Unique To True",
+      "uniqueItems": true,
+      "properties": {
+        "account_id": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 12
+        },
+        "first_name": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        },
+        "last_name": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        },
+        "handle": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        },
+        "notes": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        }
+      },
+      "required": [ "account_id", "first_name", "last_name", "handle", "notes" ]
+    }
+  },
+  "required": [ ]
+}

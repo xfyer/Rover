@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/product.schema.json",
+  "title": "Product",
+  "description": "Retrieve Latest Tweets From Database",
+  "type": "object",
+  "properties": {
+    "latest_tweet_id": {
+      "description": "Twitter's ID For A Tweet",
+      "type": "integer",
+      "minimum": 20
+    },
+    "results": {
+      "description": "Latest 20 Tweets Ordered By Tweet ID Descending",
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "properties": {
+        "id": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 20
+        },
+        "twitter_user_id": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 12
+        },
+        "date": {
+          "description": "FILL ME OUT",
+          "type": "date-time",
+          "__comment": "2018-11-13T20:20:39+00:00",
+          "__comment2": "YYYY-MM-DD'T'HH:MM:SS'+UTC'"
+        },
+        "text": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        },
+        "device": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        },
+        "favorites": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 0
+        },
+        "retweets": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 0
+        },
+        "quoteTweets": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 0
+        },
+        "replies": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 0
+        },
+        "isRetweet": {
+          "description": "FILL ME OUT",
+          "type": "boolean"
+        },
+        "isDeleted": {
+          "description": "FILL ME OUT",
+          "type": "boolean"
+        },
+        "repliedToTweetId": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 20
+        },
+        "repliedToUserId": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 12
+        },
+        "repliedToTweetDate": {
+          "description": "FILL ME OUT",
+          "type": "date-time",
+          "__comment": "2018-11-13T20:20:39+00:00",
+          "__comment2": "YYYY-MM-DD'T'HH:MM:SS'+UTC'"
+        },
+        "retweetedTweetId": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 20
+        },
+        "retweetedUserId": {
+          "description": "FILL ME OUT",
+          "type": "integer",
+          "minimum": 12
+        },
+        "retweetedTweetDate": {
+          "description": "FILL ME OUT",
+          "type": "date-time",
+          "__comment": "2018-11-13T20:20:39+00:00",
+          "__comment2": "YYYY-MM-DD'T'HH:MM:SS'+UTC'"
+        },
+        "hasWarning": {
+          "description": "FILL ME OUT",
+          "type": "boolean"
+        },
+        "warningLabel": {
+          "description": "FILL ME OUT",
+          "type": "string"
+        }
+      },
+      "minItems": 0,
+      "maxItems": 20,
+      "uniqueItems": true,
+      "required": [ "id", "twitter_user_id", "date", "text", "device", "favorites", "retweets", "isRetweet", "isDeleted" ]
+    }
+  },
+  "required": [ ]
+}

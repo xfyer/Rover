@@ -86,6 +86,7 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
 
     return response
 
+
 def lookup_account(repo: Dolt, table: str, queries: dict) -> dict:
     if "account" not in queries:
         # TODO: Create A Proper Error Handler To Ensure Error Messages and IDs Are Standardized
