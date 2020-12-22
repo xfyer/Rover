@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytz
 
+from database import database
 from rover import config
 
 
@@ -12,9 +13,19 @@ def load_page(self, page: str):
     # Site Data
     site_title: str = "Rover"
 
+    # TODO: Verify If Multiple Connections Can Cause Data Loss
+    # data: dict = database.pickRandomOfficials(repo=self.repo)
+
     # Twitter Metadata
     twitter_title: str = site_title
-    twitter_description: str = "Future Analysis Website Here!!!"
+    # twitter_description: str = "Future Analysis Website Here" \
+    #                            " For Officials Such As {official_one}," \
+    #                            " {official_two}, and {official_three}" \
+    #                            .format(official_one=(data[0]["first_name"] + " " + data[0]["last_name"]),
+    #                                    official_two=(data[1]["first_name"] + " " + data[1]["last_name"]),
+    #                                    official_three=(data[2]["first_name"] + " " + data[2]["last_name"]))
+
+    twitter_description: str = "Future Analysis Website Here For Officials Such As Donald Trump, Joe Biden, and Barack Obama"
 
     # HTTP Headers
     self.send_response(200)

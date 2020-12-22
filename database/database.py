@@ -7,7 +7,7 @@ from mysql.connector import conversion
 from pypika import Query, Table, Order
 from pypika.functions import Lower, Count
 from pypika.queries import QueryBuilder, CreateQueryBuilder, Column
-from pypika.terms import Star
+from pypika.terms import Star, CustomFunction
 
 
 def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
@@ -248,4 +248,21 @@ def retrieveAccountInfo(repo: Dolt, account_id: int) -> dict:
         .select(Star()) \
         .where(government.twitter_user_id == account_id)
 
+    return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+
+def pickRandomOfficials(repo: Dolt, max_results: int = 3) -> dict:
+    # select first_name, last_name from government where twitter_user_id
+    # is not null group by first_name, last_name order by rand() limit 3
+    randFunc: CustomFunction = CustomFunction("rand()")
+
+    government: Table = Table("government")
+    query: QueryBuilder = Query.from_(government) \
+        .select(government.first_name, government.last_name) \
+        .where(government.twitter_user_id.notnull()) \
+        .groupby(government.first_name, government.last_name) \
+        .orderby(randFunc.name) \
+        .limit(max_results)
+
+    print(query.get_sql(quote_char=None))
     return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]

@@ -4,11 +4,13 @@ import logging
 import socketserver
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Tuple
+from typing import Tuple, Optional
 from urllib.parse import urlparse
 
+from doltpy.core import Dolt
 from doltpy.core.system_helpers import get_logger
 
+from archiver import config
 from config import config as main_config
 import rover.server.page_handler as handler
 import rover.server.api_handler as api
@@ -57,7 +59,23 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.INFO_QUIET: int = main_config.INFO_QUIET
         self.VERBOSE: int = main_config.VERBOSE
 
+        # TODO: Implement Global Handle On Repo
+        # Initiate Repo For Server
+        self.repo: Optional[Dolt] = None
+        self.initRepo(path=config.ARCHIVE_TWEETS_REPO_PATH,
+                      create=False,
+                      url=config.ARCHIVE_TWEETS_REPO_URL)
+
         super().__init__(request, client_address, server)
+
+    def initRepo(self, path: str, create: bool, url: str = None):
+        # Prepare Repo For Data
+        if create:
+            repo = Dolt.init(path)
+            repo.remote(add=True, name='origin', url=url)
+            self.repo: Dolt = repo
+
+        self.repo: Dolt = Dolt(path)
 
     def log_message(self, log_format: str, *args: [str]):
         self.logger.log(logging.DEBUG, log_format % args)
