@@ -57,7 +57,8 @@ def search_tweets(search_phrase: str, repo: Dolt, table: str, max_responses: int
         .orderby(tweets.id, order=Order.desc) \
         .limit(max_responses) \
         .where(Lower(tweets.text).like(
-        search_phrase.lower())  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
+            search_phrase.lower()
+        )  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
     )
 
     if account_id is not None:
@@ -83,12 +84,13 @@ def count_tweets(search_phrase: str, repo: Dolt, table: str, account_id: Optiona
         .select(Count(tweets.id)) \
         .orderby(tweets.id, order=Order.desc) \
         .where(Lower(tweets.text).like(
-        search_phrase.lower())  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
+            search_phrase.lower()
+        )  # TODO: lower(text) COLLATE utf8mb4_unicode_ci like lower('{search_phrase}')
     )
 
     if account_id is not None:
         # Show Results For Specific Account
-        query: QueryBuilder = query.where(tweets.twitter_user_id, account_id)
+        query: QueryBuilder = query.where(tweets.twitter_user_id == account_id)
 
     if hide_deleted_tweets:
         # Filter Out Deleted Tweets
