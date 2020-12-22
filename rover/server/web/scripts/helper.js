@@ -1,5 +1,8 @@
 // Load Functions
 setupMaterialUI()
+overrideScrollReload()
+
+// TODO: Add Means To Delete All Cache and Service Worker!!!
 
 // From https://stackoverflow.com/a/17192845/6828099
 function uintToString(uintArray) {
@@ -9,20 +12,86 @@ function uintToString(uintArray) {
 }
 
 function lookupNameFromID(twitter_account_id) {
-    // TODO: Stop Hardcoding This
-    if (twitter_account_id === "25073877") {
-        return "Donald Trump"
-    }
+    caches.open(accountCacheName).then(cache => {
+        cache.match(twitter_account_id).then(account => {
+            if (account === undefined) {
+                downloadAccountInfo(twitter_account_id).then(result => {
+                    console.debug("Downloaded Account Info: '" + twitter_account_id + "'")
+                    updateAccountNamesOnTable(result)
+                })
+                return
+            }
 
-    if (twitter_account_id === "1323730225067339784") {
-        return "Joe Biden"
-    }
+            let reader = account.body.getReader()
 
-    if (twitter_account_id === "1536791610") {
-        return "Barack Obama"
-    }
+            reader.read().then(result => {
+                console.debug("Found Account Info: '" + twitter_account_id + "'")
+                updateAccountNamesOnTable(uintToString(result.value))
+            })
+        })
+    })
+}
 
-    return twitter_account_id
+async function downloadAccountInfo(twitter_account_id) {
+    console.debug("Looking Up Account Info For Account '" + twitter_account_id + "' !!!")
+
+    // For Dynamic GET Requests
+    let parameters = {"account": twitter_account_id}
+
+    let contents;
+    return $.ajax({
+        type: 'GET',
+        url: accountAPIURL,
+        data: parameters,
+        dataType: "text", // Forces Ajax To Process As String
+        cache: false, // Keep Browser From Caching Data
+        async: true, // Already In Async Function
+        error: function (response) {
+            console.error("Failed To Account Info For '" + twitter_account_id + "': ", response);
+        },
+        success: function (response) {
+            // console.error(response)
+            contents = response
+        },
+        complete: function (response) {
+            // response.success is for some reason not cooperating
+            console.debug('Successful: ' + response.success);
+            console.debug('Response Code: ' + response.status)
+
+            if (response.status === 200) {
+                console.debug("Downloaded Account Info For '" + twitter_account_id + "'!!!");
+
+                caches.open(accountCacheName).then(cache => {
+                    // Delete The Cache, Then Re-add
+                    cache.delete(twitter_account_id).then(() => {
+                        const init = {"status": response.status, "statusText": response.statusText,
+                            "headers": {
+                                "Content-Type": "application/json",
+                                "Content-Length": contents.length
+                            }};
+
+                        const results = new Response(contents, init);
+
+                        cache.put(twitter_account_id, results);
+                    });
+                })
+            } else {
+                console.error("Could Not Download Account Info For '" + twitter_account_id + "'!!!")
+                console.debug('Response Code: ' + response.status)
+                console.debug('Response Text: ' + response.statusText)
+            }
+        }
+    });
+}
+
+function updateAccountNamesOnTable(accounts) {
+    // TODO: Implement Proper Looping For Multi-Account Handle
+    // TODO: Needs to be done for the downloading the data too
+    response = $.parseJSON(accounts).accounts[0];
+
+    $(document).ready(function () {
+        $(".account-" + response.account_id).text(response.first_name + " " + response.last_name)
+    })
 }
 
 function generateTableFromTweets(tweets) {
@@ -35,11 +104,13 @@ function generateTableFromTweets(tweets) {
         $(function() {
             let cards = ""
             $.each(response.results, function(i, item) {
+                lookupNameFromID(item.twitter_user_id)  // TODO: Implement Proper Looping For Multi-Account Handle
+
                 cards += "<div class=\"mdc-card tweet-card\">\n" +
                     "    <div class=\"mdc-card__primary-action mdc-theme--text-primary-on-dark mdc-theme--primary-bg card__content\" tabindex=\"0\">\n" +
                     "        <div>\n" +
                     "            <h2 class=\"card__title mdc-typography mdc-typography--headline6\">Tweet</h2>\n" +
-                    "            <h3 class=\"card__subtitle mdc-typography mdc-typography--subtitle2\">by " + lookupNameFromID(item.twitter_user_id) + " on " + item.date + " UTC</h3>\n" +
+                    "            <h3 class=\"card__subtitle mdc-typography mdc-typography--subtitle2\">by <span class='account-name account-" + item.twitter_user_id + "'>Loading Name For " + item.twitter_user_id + "</span> on <span class='tweet-date'>" + item.date + " UTC</span></h3>\n" +
                     "        </div>\n" +
                     "        <div class=\"card__text mdc-typography mdc-typography--body2\">" + item.text + "</div>\n" +
                     "    </div>\n" +
@@ -106,4 +177,18 @@ function getCookie(cname) {
     }
 
     return null;
+}
+
+function overrideScrollReload() {
+    if (self.document === undefined) {
+        return;
+    }
+
+    if (!/no-scroll=true/.test(window.location)) {
+        return;
+    }
+
+    $(document).ready(function () {
+        $("body").addClass("no-scroll");
+    });
 }

@@ -8,6 +8,10 @@ body {
     margin: auto;
 }
 
+body.no-scroll {
+    overscroll-behavior: none
+}
+
 div#gov-tweets {
     overflow-x: auto;
 }

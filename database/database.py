@@ -7,6 +7,7 @@ from mysql.connector import conversion
 from pypika import Query, Table, Order
 from pypika.functions import Lower, Count
 from pypika.queries import QueryBuilder, CreateQueryBuilder, Column
+from pypika.terms import Star
 
 
 def latest_tweets(repo: Dolt, table: str, max_responses: int = 10, account_id: Optional[int] = None,
@@ -199,36 +200,36 @@ def updateTweetWithAPIV1(repo: Dolt, table: str, tweet_id: str, data: dict):
 
 def createTableIfNotExists(repo: Dolt, table: str):
     query: CreateQueryBuilder = Query.create_table(table=table) \
-                                     .columns(
-                                        Column("id", "bigint unsigned", nullable=False),
-                                        Column("twitter_user_id", "bigint unsigned", nullable=False),
+        .columns(
+        Column("id", "bigint unsigned", nullable=False),
+        Column("twitter_user_id", "bigint unsigned", nullable=False),
 
-                                        Column("date", "datetime", nullable=False),
-                                        Column("text", "longtext", nullable=False),
-                                        Column("device", "longtext", nullable=False),
+        Column("date", "datetime", nullable=False),
+        Column("text", "longtext", nullable=False),
+        Column("device", "longtext", nullable=False),
 
-                                        Column("favorites", "bigint unsigned", nullable=False),
-                                        Column("retweets", "bigint unsigned", nullable=False),
-                                        Column("quoteTweets", "bigint unsigned"),
-                                        Column("replies", "bigint unsigned"),
+        Column("favorites", "bigint unsigned", nullable=False),
+        Column("retweets", "bigint unsigned", nullable=False),
+        Column("quoteTweets", "bigint unsigned"),
+        Column("replies", "bigint unsigned"),
 
-                                        Column("isRetweet", "tinyint", nullable=False),
-                                        Column("isDeleted", "tinyint", nullable=False),
+        Column("isRetweet", "tinyint", nullable=False),
+        Column("isDeleted", "tinyint", nullable=False),
 
-                                        Column("repliedToTweetId", "bigint unsigned"),
-                                        Column("repliedToUserId", "bigint unsigned"),
-                                        Column("repliedToTweetDate", "datetime"),
+        Column("repliedToTweetId", "bigint unsigned"),
+        Column("repliedToUserId", "bigint unsigned"),
+        Column("repliedToTweetDate", "datetime"),
 
-                                        Column("retweetedTweetId", "bigint unsigned"),
-                                        Column("retweetedUserId", "bigint unsigned"),
-                                        Column("retweetedTweetDate", "datetime"),
+        Column("retweetedTweetId", "bigint unsigned"),
+        Column("retweetedUserId", "bigint unsigned"),
+        Column("retweetedTweetDate", "datetime"),
 
-                                        Column("expandedUrls", "longtext"),
+        Column("expandedUrls", "longtext"),
 
-                                        Column("json", "longtext"),
-                                        Column("json_v1", "longtext"),
-                                        Column("notes", "longtext")
-                                     ).primary_key("id")
+        Column("json", "longtext"),
+        Column("json_v1", "longtext"),
+        Column("notes", "longtext")
+    ).primary_key("id")
 
     # TODO: Figure Out How To Add The Below Parameters
     # --------------------------------------------------------------------------------------------------------------
@@ -239,3 +240,12 @@ def createTableIfNotExists(repo: Dolt, table: str):
     # --------------------------------------------------------------------------------------------------------------
 
     repo.sql(query=query.get_sql(quote_char=None), result_format="csv")
+
+
+def retrieveAccountInfo(repo: Dolt, account_id: int) -> dict:
+    government: Table = Table("government")
+    query: QueryBuilder = Query.from_(government) \
+        .select(Star()) \
+        .where(government.twitter_user_id == account_id)
+
+    return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]

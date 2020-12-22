@@ -1,12 +1,14 @@
 // Cache Names
 const staticCacheName = 'pages-cache-v1';
 const tweetCacheName = 'tweets-cache-v1';
+const accountCacheName = 'accounts-cache-v1';
 
 // Sync Events
 const tweetSyncName = 'tweets-sync';
 
 // Sync URLs
 const tweetAPIURL = '/api/latest'
+const accountAPIURL = '/api/accounts'
 
 // Load Functions
 registerServiceWorker();

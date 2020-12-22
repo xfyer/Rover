@@ -53,7 +53,8 @@ def run_function(repo: Dolt, table: str, url: urlparse, queries: dict) -> dict:
     endpoints = {
         '/api': send_help,
         '/api/latest': load_latest_tweets,
-        '/api/search': perform_search
+        '/api/search': perform_search,
+        '/api/accounts': lookup_account
     }
 
     func = endpoints.get(url.path.rstrip('/'), invalid_endpoint)
@@ -85,6 +86,61 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
 
     return response
 
+def lookup_account(repo: Dolt, table: str, queries: dict) -> dict:
+    if "account" not in queries:
+        # TODO: Create A Proper Error Handler To Ensure Error Messages and IDs Are Standardized
+        return {
+            "error": "No Account ID Specified",
+            "code": 2
+        }
+
+    # TODO: Implement Proper Way To Kill Abusers
+    # To Prevent Hanging The Server
+    max_results: int = 10
+
+    # Results To Return
+    results: dict = {"accounts": []}
+
+    found_a_result: bool = False
+    count: int = 0
+    for account_id_str in queries["account"]:
+        # Don't Let Above Max Results To Prevent Hanging
+        if count >= max_results:
+            break
+
+        # Make Sure Always Counted
+        count = count + 1
+
+        account_id: int = int(account_id_str) if "account" in queries and validateNumber(value=account_id_str) else None
+
+        # No Valid Id, So Skip
+        if account_id is None:
+            continue
+
+        accounts: dict = database.retrieveAccountInfo(repo=repo, account_id=account_id)
+
+        # No Results, So Skip
+        if len(accounts) < 1:
+            continue
+
+        found_a_result: bool = True
+
+        results["accounts"].append({
+            "account_id": str(account_id),
+            "first_name": accounts[0]["first_name"],
+            "last_name": accounts[0]["last_name"],
+            "handle": accounts[0]["twitter_handle"],
+            "notes": accounts[0]["notes"]
+        })
+
+    if not found_a_result:
+        return {
+            "error": "No Results Found!!!",
+            "code": 3
+        }
+
+    return results
+
 
 def perform_search(repo: Dolt, table: str, queries: dict) -> dict:
     original_search_text: str = queries["text"][0] if "text" in queries else ""
@@ -111,7 +167,8 @@ def send_help(repo: Dolt, table: str, queries: dict) -> dict:
         "endpoints": [
             {"/api": "Query List of Endpoints"},
             {"/api/latest": "Retrieve Newest Tweets"},
-            {"/api/search": "Search For Tweets"}
+            {"/api/search": "Search For Tweets"},
+            {"/api/accounts": "Lookup Account Info By ID"}
         ],
         "note": "Future Description of Query Parameters Are On My Todo List"
     }
