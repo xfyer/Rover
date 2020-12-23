@@ -90,7 +90,10 @@ function updateAccountNamesOnTable(accounts) {
     response = $.parseJSON(accounts).accounts[0];
 
     $(document).ready(function () {
-        $(".account-" + response.account_id).text(response.first_name + " " + response.last_name)
+        $("span.account-" + response.account_id).text(response.first_name + " " + response.last_name)
+
+        // onclick=\" window.open('https://www.twitter.com/" + item.twitter_user_id + "/statuses/" + item.id + "','_blank')\"
+        //$("button.account-" + response.account_id).text("response.account_id TODO: REPLACE ME WITH FIXING ONCLICK")
     })
 }
 
@@ -117,7 +120,7 @@ function generateTableFromTweets(tweets) {
                     "    <div class=\"mdc-card__actions mdc-theme--text-secondary-on-dark mdc-theme--secondary-bg card__actions\">\n" +
                     "        <div class=\"mdc-card__action-buttons\">\n" +
                     "            <button class=\"mdc-button mdc-card__action mdc-card__action--button mdc-button--raised\">  <span class=\"mdc-button__ripple\"></span> " + item.device + "</button>\n" +
-                    "            <button class=\"mdc-button mdc-card__action mdc-card__action--button mdc-button--raised\" onclick=\" window.open('https://www.twitter.com/REPLACEME/statuses/" + item.id + "','_blank')\">  <span class=\"mdc-button__ripple\"></span> View Tweet</button>\n" +
+                    "            <button class=\"mdc-button mdc-card__action mdc-card__action--button mdc-button--raised account-" + item.twitter_user_id + "\" onclick=\" window.open('https://www.twitter.com/" + item.twitter_user_id + "/statuses/" + item.id + "','_blank')\">  <span class=\"mdc-button__ripple\"></span> View Tweet</button>\n" +
                     "        </div>\n" +
                     "    </div>\n" +
                     "</div>"
