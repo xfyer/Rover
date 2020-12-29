@@ -268,3 +268,37 @@ def pickRandomOfficials(repo: Dolt, max_results: int = 3) -> dict:
 
     print(query.get_sql(quote_char=None))
     return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+
+def retrieveMissingBroadcastInfo(repo: Dolt, table: str) -> dict:
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id, tweets.expandedUrls) \
+        .where(tweets.expandedUrls.like("https://twitter.com/i/broadcasts/%")) \
+        .where(tweets.broadcast_json.isnull())
+
+    return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
+
+
+def setBroadcastJSON(repo: Dolt, table: str, tweet_id: str, data: dict):
+    sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
+    escaped_json: str = sql_converter.escape(value=json.dumps(data))
+
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.update(tweets) \
+        .set(tweets.broadcast_json, escaped_json) \
+        .where(tweets.id == tweet_id)
+
+    repo.sql(query=query.get_sql(quote_char=None), result_format="csv")
+
+
+def setStreamJSON(repo: Dolt, table: str, tweet_id: str, data: dict):
+    sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
+    escaped_json: str = sql_converter.escape(value=json.dumps(data))
+
+    tweets: Table = Table(table)
+    query: QueryBuilder = Query.update(tweets) \
+        .set(tweets.stream_json, escaped_json) \
+        .where(tweets.id == tweet_id)
+
+    repo.sql(query=query.get_sql(quote_char=None), result_format="csv")

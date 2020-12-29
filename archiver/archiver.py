@@ -22,7 +22,8 @@ from database import database
 
 
 class Archiver(threading.Thread):
-    def __init__(self, threadID: int, name: str, threadLock: threading.Lock, requested_wait_time: int = 60, commit: bool = True):
+    def __init__(self, threadID: int, name: str, threadLock: threading.Lock, requested_wait_time: int = 60,
+                 commit: bool = True):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
@@ -47,8 +48,12 @@ class Archiver(threading.Thread):
         # Token
         token: BearerAuth = BearerAuth(token=credentials['BEARER_TOKEN'])
 
-        # Twitter API V2
-        self.twitter_api: TweetAPI2 = TweetAPI2(auth=token)
+        # Twitter API V2 and Potential Alt Auth
+        if "ALT_BEARER_TOKEN" in credentials:
+            alt_token: BearerAuth = BearerAuth(token=credentials['ALT_BEARER_TOKEN'])
+            self.twitter_api: TweetAPI2 = TweetAPI2(auth=token, alt_auth=alt_token)
+        else:
+            self.twitter_api: TweetAPI2 = TweetAPI2(auth=token)
 
         # Wait Time Remaining
         self.requested_wait_time = requested_wait_time
@@ -66,6 +71,10 @@ class Archiver(threading.Thread):
 
             self.download_tweets()
 
+            # Add Livestream Stuff
+            # guest_token: str = self.twitter_api.get_guest_token()
+            # self.get_broadcast_urls(guest_token=guest_token)
+
             # Release Lock
             self.threadLock.release()
 
@@ -80,6 +89,32 @@ class Archiver(threading.Thread):
                                 unit=wait_unit))
 
             time.sleep(current_wait_time)
+
+    def get_broadcast_urls(self, guest_token: str):
+        broadcasts: dict = database.retrieveMissingBroadcastInfo(repo=self.repo, table=config.ARCHIVE_TWEETS_TABLE)
+
+        for broadcast in broadcasts:
+            broadcast_id = broadcast["expandedUrls"].split('/')[5]
+
+            try:
+                broadcast_json: dict = json.loads(self.twitter_api.get_broadcast_json(stream_id=broadcast_id, guest_token=guest_token).text)
+
+                database.setBroadcastJSON(repo=self.repo, table=config.ARCHIVE_TWEETS_TABLE,
+                                          tweet_id=broadcast["id"], data=broadcast_json)
+
+                broadcast_meta_json: Optional[dict] = None
+                for broadcast_meta in broadcast_json["broadcasts"]:
+                    broadcast_meta_json: dict = broadcast_json["broadcasts"][broadcast_meta]
+                    break
+
+                if "media_key" in broadcast_meta_json:
+                    media_json: dict = json.loads(self.twitter_api.get_stream_json(media_key=broadcast_meta_json["media_key"], guest_token=guest_token).text)
+
+                    database.setStreamJSON(repo=self.repo, table=config.ARCHIVE_TWEETS_TABLE,
+                                           tweet_id=broadcast["id"], data=media_json)
+            except Exception as e:
+                print(f"STREAM ERROR: {e}")
+                continue
 
     def download_tweets(self):
         self.logger.log(self.INFO_QUIET, "Checking For New Tweets")
