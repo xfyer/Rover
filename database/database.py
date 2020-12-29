@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import json
-from typing import Optional
+from typing import Optional, List
 
 from doltpy.core import Dolt
 from mysql.connector import conversion
@@ -300,5 +300,20 @@ def setStreamJSON(repo: Dolt, table: str, tweet_id: str, data: dict):
     query: QueryBuilder = Query.update(tweets) \
         .set(tweets.stream_json, escaped_json) \
         .where(tweets.id == tweet_id)
+
+    repo.sql(query=query.get_sql(quote_char=None), result_format="csv")
+
+
+def addMediaFiles(repo: Dolt, table: str, tweet_id: str, data: List[str]):
+    sql_converter: conversion.MySQLConverter = conversion.MySQLConverter()
+    escaped_json: str = sql_converter.escape(value=json.dumps(data))
+
+    media: Table = Table(table)
+    query: QueryBuilder = Query.into(media) \
+        .insert(tweet_id, escaped_json)
+
+    # query: QueryBuilder = Query.update(media) \
+    #     .set(media.file, escaped_json) \
+    #     .where(media.id == tweet_id)
 
     repo.sql(query=query.get_sql(quote_char=None), result_format="csv")

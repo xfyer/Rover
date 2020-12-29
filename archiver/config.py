@@ -12,6 +12,10 @@ ARCHIVE_TWEETS_TABLE: str = "tweets"
 ARCHIVE_TWEETS_COMMIT_MESSAGE: str = "Automated Tweet Update"
 ARCHIVE_TWEETS_REPO_BRANCH: str = "master"
 
+# Media Vars
+MEDIA_TWEETS_TABLE: str = "media"
+MEDIA_FILE_LOCATION: str = "/mnt/prez-media/{tweet_id}/"
+
 # Config Files
 CREDENTIALS_FILE_PATH: str = "credentials.json"
 
