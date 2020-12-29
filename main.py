@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import threading
 import time
 
 # Custom Log Levels
@@ -60,43 +61,30 @@ parser.add_argument("-commit", "--commit", help="Commit Tweets To Repo When Arch
                     type=bool,
                     action=argparse.BooleanOptionalAction)
 
+# TODO: Verify Using Lock Correctly - Appears To Be Correct So Far With Testing
+threadLock: threading.Lock = threading.Lock()
+
 
 def main(arguments: argparse.Namespace):
     # Set Logging Level
     logging.Logger.setLevel(system_helpers.logger, arguments.logLevel)  # DoltPy's Log Level
     logger.setLevel(arguments.logLevel)  # This Script's Log Level
 
-    # TODO: Fix So Responds When Activated
-    # if arguments.rover:
-    rover: Rover = Rover(arguments.reply)
+    rover: Rover = Rover(threadID=1, name="Rover", requested_wait_time=arguments.wait * 60, reply=arguments.reply, threadLock=threadLock)
+    archiver: Archiver = Archiver(threadID=2, name="Archiver", requested_wait_time=arguments.wait * 60, commit=arguments.commit, threadLock=threadLock)
+    server: WebServer = WebServer(threadID=3, name="Analysis Server")  # https://www.tutorialspoint.com/python3/python_multithreading.htm
 
-    # if arguments.archive:  # TODO: Fix Wait Time To Be Independent Of Archiver
-    archiver: Archiver = Archiver(arguments.commit)
-    server: WebServer = WebServer(1, "Analysis Server", 1)  # https://www.tutorialspoint.com/python3/python_multithreading.htm
+    # Start Archiver
+    if arguments.archive:
+        archiver.start()
+
+    # Start Rover
+    if arguments.rover:
+        rover.start()
 
     # Start Webserver
     if arguments.server:
         server.start()
-
-    wait_time: int = arguments.wait * 60
-    while 1:
-        if arguments.archive:
-            archiver.download_tweets()
-
-        if arguments.rover:
-            rover.look_for_tweets()
-
-        # TODO: Implement Wait Time Check For Rover
-        current_wait_time: int = wait_time
-        if isinstance(archiver.wait_time, int):
-            current_wait_time: int = wait_time if wait_time > archiver.wait_time else archiver.wait_time
-
-        wait_unit: str = "Minute" if wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
-        logger.log(main_config.INFO_QUIET,
-                   "Waiting For {time} {unit} Before Checking For New Tweets".format(time=int(current_wait_time/60),
-                                                                                     unit=wait_unit))
-
-        time.sleep(current_wait_time)
 
 
 if __name__ == '__main__':

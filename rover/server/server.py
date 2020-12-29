@@ -20,11 +20,10 @@ threadLock: threading.Lock = threading.Lock()
 
 
 class WebServer(threading.Thread):
-    def __init__(self, threadID, name, counter):
+    def __init__(self, threadID: int, name: str):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
-        self.counter = counter
 
         self.logger: logging.Logger = get_logger(__name__)
         self.INFO_QUIET: int = main_config.INFO_QUIET

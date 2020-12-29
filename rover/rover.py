@@ -2,6 +2,8 @@
 
 import json
 import logging
+import threading
+import time
 from typing import Optional, Any, Reversible
 from json.decoder import JSONDecodeError
 from os import path
@@ -14,13 +16,24 @@ from rover import handle_commands, config
 from config import config as main_config
 
 
-class Rover:
-    def __init__(self, reply: bool = True):
+class Rover(threading.Thread):
+    def __init__(self, threadID: int, name: str, threadLock: threading.Lock, requested_wait_time: int = 60, reply: bool = True):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+
         self.logger: logging.Logger = get_logger(__name__)
         self.INFO_QUIET: int = main_config.INFO_QUIET
         self.VERBOSE: int = main_config.VERBOSE
         self.status_file: str = config.STATUS_FILE_PATH
         self.credentials_file: str = config.CREDENTIALS_FILE_PATH
+
+        # Thread Lock To Share With Archiver
+        self.threadLock = threadLock
+
+        # Wait Time Remaining
+        self.requested_wait_time = requested_wait_time
+        self.wait_time: Optional[int] = None
 
         # For Debugging
         config.REPLY = reply
@@ -35,6 +48,31 @@ class Rover:
         # Setup For Twitter API
         with open(self.credentials_file, "r") as file:
             self.__credentials: dict = json.load(file)
+
+    def run(self):
+        self.logger.log(self.INFO_QUIET, "Starting " + self.name)
+
+        while 1:
+            # Get lock to synchronize threads
+            self.threadLock.acquire()
+
+            # Look For Tweets To Respond To
+            self.look_for_tweets()
+
+            # Release Lock
+            self.threadLock.release()
+
+            current_wait_time: int = self.requested_wait_time
+            if isinstance(self.wait_time, int):
+                current_wait_time: int = self.requested_wait_time if self.requested_wait_time > self.wait_time else self.wait_time
+
+            wait_unit: str = "Minute" if current_wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
+            self.logger.log(main_config.INFO_QUIET,
+                            "Waiting For {time} {unit} Before Checking For New Tweets".format(
+                                time=int(current_wait_time / 60),
+                                unit=wait_unit))
+
+            time.sleep(current_wait_time)
 
     def look_for_tweets(self):
         # self.save_status_to_file(status_id=1335821481557831679)  # For Debugging Bot
@@ -80,7 +118,8 @@ class Rover:
                 # To Deal With That Duplicate Status Error - [{'code': 187, 'message': 'Status is a duplicate.'}]
                 if type(e.message) is dict:
                     self.logger.error("Twitter Error (Code {code}): {error_message}".format(code=e.message[0]["code"],
-                                                                                            error_message=e.message[0]["message"]))
+                                                                                            error_message=e.message[0][
+                                                                                                "message"]))
                 else:
                     self.logger.error("Twitter Error: {error_message}".format(error_message=e.message))
 

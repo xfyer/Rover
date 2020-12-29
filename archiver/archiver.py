@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import os
+import threading
 import time
 from json.decoder import JSONDecodeError
 from typing import Optional, TextIO
@@ -20,12 +21,19 @@ from config import config as main_config
 from database import database
 
 
-class Archiver:
-    def __init__(self, commit: bool = True):
+class Archiver(threading.Thread):
+    def __init__(self, threadID: int, name: str, threadLock: threading.Lock, requested_wait_time: int = 60, commit: bool = True):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+
         self.logger: logging.Logger = get_logger(__name__)
         self.INFO_QUIET: int = main_config.INFO_QUIET
         self.VERBOSE: int = main_config.VERBOSE
         self.repo: Optional[Dolt] = None
+
+        # Thread Lock To Share With Rover
+        self.threadLock = threadLock
 
         # Setup Repo
         self.initRepo(path=config.ARCHIVE_TWEETS_REPO_PATH,
@@ -43,10 +51,35 @@ class Archiver:
         self.twitter_api: TweetAPI2 = TweetAPI2(auth=token)
 
         # Wait Time Remaining
+        self.requested_wait_time = requested_wait_time
         self.wait_time: Optional[int] = None
 
         # Should Commit Data (For Debugging)
         self.commit: bool = commit
+
+    def run(self):
+        self.logger.log(self.INFO_QUIET, "Starting " + self.name)
+
+        while 1:
+            # Get lock to synchronize threads
+            self.threadLock.acquire()
+
+            self.download_tweets()
+
+            # Release Lock
+            self.threadLock.release()
+
+            current_wait_time: int = self.requested_wait_time
+            if isinstance(self.wait_time, int):
+                current_wait_time: int = self.requested_wait_time if self.requested_wait_time > self.wait_time else self.wait_time
+
+            wait_unit: str = "Minute" if current_wait_time == 60 else "Minutes"  # Because I Keep Forgetting What This Is Called, It's Called A Ternary Operator
+            self.logger.log(main_config.INFO_QUIET,
+                            "Waiting For {time} {unit} Before Checking For New Tweets".format(
+                                time=int(current_wait_time / 60),
+                                unit=wait_unit))
+
+            time.sleep(current_wait_time)
 
     def download_tweets(self):
         self.logger.log(self.INFO_QUIET, "Checking For New Tweets")
