@@ -92,17 +92,30 @@ class Archiver(threading.Thread):
 
             time.sleep(current_wait_time)
 
+    def add_broadcast_to_database(self, tweet_id: int, file: str):
+        self.logger.debug(f"Adding {file} To Media Table For Tweet {tweet_id}")
+        database.addMediaFiles(repo=self.repo, table=config.MEDIA_TWEETS_TABLE, tweet_id=str(tweet_id), data=[file])
+
     def download_broadcasts(self):
-        # TODO: Implement Me
-        video_url: str = "https://prod-fastly-us-east-1.video.pscp.tv/Transcoding/v1/hls/Qx-Sr6VMiiMhSh-aaGm3ODLP-n5r1d9mu00b4AsbmBoqo5QKcm67MQQYhxlpRcV76AxLDxODlQ561iL08dt4XQ/non_transcode/us-east-1/periscope-replay-direct-prod-us-east-1-public/master_dynamic_16837468481873567889.m3u8?type=replay"
-        file_location: str = config.MEDIA_FILE_LOCATION.format(tweet_id="test-download")
+        missing_broadcasts: dict = database.retrieveMissingBroadcastFiles(repo=self.repo,
+                                                                          tweets_table=config.ARCHIVE_TWEETS_TABLE,
+                                                                          media_table=config.MEDIA_TWEETS_TABLE)
 
-        video_downloader: VideoDownloader = VideoDownloader(threadID=10, name="Test", video_url=video_url, output_directory=file_location)
-        video_downloader.start()
+        for broadcast in missing_broadcasts:
+            # print(f"{broadcast['id']}, {broadcast['stream_json']}")
 
-        # database.addMediaFiles(repo=self.repo, table=config.MEDIA_TWEETS_TABLE, tweet_id=None, data=[None])
-        # config.MEDIA_FILE_LOCATION
-        var = None
+            tweet_id: int = int(broadcast["id"])
+            video_url: str = json.loads(broadcast['stream_json'])["source"]["noRedirectPlaybackUrl"]
+            file_location: str = config.MEDIA_FILE_LOCATION.format(tweet_id=tweet_id)
+            self.logger.debug(f"Preparing To Download Video (From Tweet {broadcast['id']}): {video_url}")
+
+            video_downloader: VideoDownloader = VideoDownloader(threadID=int(tweet_id),
+                                                                name=f"Livestream Archive {broadcast['id']}",
+                                                                video_url=video_url,
+                                                                output_directory=file_location,
+                                                                callback=self.add_broadcast_to_database,
+                                                                tweet_id=tweet_id)
+            video_downloader.start()
 
     def get_broadcast_urls(self, guest_token: str):
         # TODO: Add Proper Error Checking

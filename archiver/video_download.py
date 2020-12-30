@@ -2,6 +2,7 @@
 import logging
 import os
 import threading
+
 import youtube_dl
 from config import config as main_config
 from doltpy.core.system_helpers import get_logger
@@ -23,7 +24,7 @@ class DownloadLogger(object):
 
 
 class VideoDownloader(threading.Thread):
-    def __init__(self, threadID: int, name: str, video_url: str, output_directory: str):
+    def __init__(self, threadID: int, name: str, video_url: str, output_directory: str, callback: classmethod, tweet_id: int):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
@@ -38,6 +39,10 @@ class VideoDownloader(threading.Thread):
 
         # Output Directory
         self.output_directory: str = output_directory
+
+        # Callback
+        self.callback: classmethod = callback
+        self.tweet_id: int = tweet_id
 
     def run(self):
         self.logger.log(self.INFO_QUIET, f"Starting {self.name} For Video {self.video_url}")
@@ -63,4 +68,8 @@ class VideoDownloader(threading.Thread):
         }
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(self.video_url, download=False)
+            download_target = os.path.basename(ydl.prepare_filename(info))
+
             ydl.download([self.video_url])
+            self.callback(tweet_id=self.tweet_id, file=download_target)

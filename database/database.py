@@ -317,3 +317,18 @@ def addMediaFiles(repo: Dolt, table: str, tweet_id: str, data: List[str]):
     #     .where(media.id == tweet_id)
 
     repo.sql(query=query.get_sql(quote_char=None), result_format="csv")
+
+
+def retrieveMissingBroadcastFiles(repo: Dolt, tweets_table: str, media_table: str) -> dict:
+    # select id from tweets where stream_json is not null and id not in (select id from media);
+    media: Table = Table(media_table)
+    sub_query: QueryBuilder = Query.from_(media) \
+        .select(media.id)
+
+    tweets: Table = Table(tweets_table)
+    query: QueryBuilder = Query.from_(tweets) \
+        .select(tweets.id, tweets.stream_json) \
+        .where(tweets.stream_json.notnull()) \
+        .where(tweets.id.notin(sub_query))
+
+    return repo.sql(query=query.get_sql(quote_char=None), result_format='json')["rows"]
