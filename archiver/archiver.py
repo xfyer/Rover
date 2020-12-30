@@ -9,6 +9,7 @@ import threading
 import time
 from json.decoder import JSONDecodeError
 from typing import Optional, TextIO
+from archiver.video_download import VideoDownloader
 
 import pandas as pd
 from doltpy.core import Dolt, DoltException
@@ -74,6 +75,7 @@ class Archiver(threading.Thread):
             # Add Livestream Stuff
             # guest_token: str = self.twitter_api.get_guest_token()
             # self.get_broadcast_urls(guest_token=guest_token)
+            # self.download_broadcasts()
 
             # Release Lock
             self.threadLock.release()
@@ -92,6 +94,11 @@ class Archiver(threading.Thread):
 
     def download_broadcasts(self):
         # TODO: Implement Me
+        video_url: str = "https://prod-fastly-us-east-1.video.pscp.tv/Transcoding/v1/hls/Qx-Sr6VMiiMhSh-aaGm3ODLP-n5r1d9mu00b4AsbmBoqo5QKcm67MQQYhxlpRcV76AxLDxODlQ561iL08dt4XQ/non_transcode/us-east-1/periscope-replay-direct-prod-us-east-1-public/master_dynamic_16837468481873567889.m3u8?type=replay"
+        file_location: str = config.MEDIA_FILE_LOCATION.format(tweet_id="test-download")
+
+        video_downloader: VideoDownloader = VideoDownloader(threadID=10, name="Test", video_url=video_url, output_directory=file_location)
+        video_downloader.start()
 
         # database.addMediaFiles(repo=self.repo, table=config.MEDIA_TWEETS_TABLE, tweet_id=None, data=[None])
         # config.MEDIA_FILE_LOCATION
