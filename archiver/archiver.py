@@ -8,7 +8,7 @@ import os
 import threading
 import time
 from json.decoder import JSONDecodeError
-from typing import Optional, TextIO
+from typing import Optional, TextIO, List
 from archiver.video_download import VideoDownloader
 
 import pandas as pd
@@ -62,6 +62,9 @@ class Archiver(threading.Thread):
 
         # Should Commit Data (For Debugging)
         self.commit: bool = commit
+
+        # Media Threads
+        self.media_threads: List[int] = []
 
     def run(self):
         self.logger.log(self.INFO_QUIET, "Starting " + self.name)

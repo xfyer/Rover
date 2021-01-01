@@ -36,7 +36,7 @@ def send_reply(self, repo: Dolt, table: str):
     url: urlparse = urlparse(self.path)
     queries: dict = parse_qs(url.query)
 
-    response_dict: dict = run_function(repo=repo, table=table, url=url, queries=queries)
+    response_dict: dict = run_function(repo=repo, table=table, url=url, queries=queries, self=self)
 
     response: str = json.dumps(response_dict)
     content_length: int = len(response)
@@ -49,21 +49,23 @@ def send_reply(self, repo: Dolt, table: str):
     self.wfile.write(bytes(response, "utf-8"))
 
 
-def run_function(repo: Dolt, table: str, url: urlparse, queries: dict) -> dict:
+def run_function(self, repo: Dolt, table: str, url: urlparse, queries: dict) -> dict:
     endpoints = {
         '/api': send_help,
         '/api/latest': load_latest_tweets,
         '/api/search': perform_search,
-        '/api/accounts': lookup_account
+        '/api/accounts': lookup_account,
+        '/api/webhooks': handle_webhook
     }
 
     func = endpoints.get(url.path.rstrip('/'), invalid_endpoint)
-    return func(repo=repo, table=table, queries=queries)
+    return func(repo=repo, table=table, queries=queries, self=self)
 
 
-def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
+def load_latest_tweets(repo: Dolt, table: str, queries: dict, self) -> dict:
     """
         Load Latest Tweets. Can Be From Account And/Or Paged.
+        :param self:
         :param repo: Dolt Repo Path
         :param table: Table To Query
         :param queries: GET Queries Dictionary
@@ -72,10 +74,12 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
     max_responses: int = int(queries['max'][0]) if "max" in queries and validateRangedNumber(value=queries['max'][0],
                                                                                              min=0, max=20) else 20
 
-    last_tweet_id: Optional[int] = int(queries['tweet'][0]) if "tweet" in queries and validateNumber(value=queries['tweet'][0]) else None
+    last_tweet_id: Optional[int] = int(queries['tweet'][0]) if "tweet" in queries and validateNumber(
+        value=queries['tweet'][0]) else None
 
     latest_tweets: dict = convertIDsToString(
-        results=database.latest_tweets(repo=repo, table=table, max_responses=max_responses, last_tweet_id=last_tweet_id))
+        results=database.latest_tweets(repo=repo, table=table, max_responses=max_responses,
+                                       last_tweet_id=last_tweet_id))
 
     response: dict = {
         "results": latest_tweets
@@ -87,7 +91,7 @@ def load_latest_tweets(repo: Dolt, table: str, queries: dict) -> dict:
     return response
 
 
-def lookup_account(repo: Dolt, table: str, queries: dict) -> dict:
+def lookup_account(repo: Dolt, table: str, queries: dict, self) -> dict:
     if "account" not in queries:
         # TODO: Create A Proper Error Handler To Ensure Error Messages and IDs Are Standardized
         return {
@@ -143,7 +147,7 @@ def lookup_account(repo: Dolt, table: str, queries: dict) -> dict:
     return results
 
 
-def perform_search(repo: Dolt, table: str, queries: dict) -> dict:
+def perform_search(repo: Dolt, table: str, queries: dict, self) -> dict:
     original_search_text: str = queries["text"][0] if "text" in queries else ""
 
     search_phrase: str = search_tweets.convert_search_to_query(phrase=original_search_text)
@@ -159,7 +163,7 @@ def perform_search(repo: Dolt, table: str, queries: dict) -> dict:
     }
 
 
-def send_help(repo: Dolt, table: str, queries: dict) -> dict:
+def send_help(repo: Dolt, table: str, queries: dict, self) -> dict:
     """
         Used To Indicate Existing API Endpoints
         :return: JSON Response With URLs
@@ -175,7 +179,7 @@ def send_help(repo: Dolt, table: str, queries: dict) -> dict:
     }
 
 
-def invalid_endpoint(repo: Dolt, table: str, queries: dict) -> dict:
+def invalid_endpoint(repo: Dolt, table: str, queries: dict, self) -> dict:
     """
         Used To Indicate Reaching an API Url That Doesn't Exist
         :return: JSON Error Message With Code For Machines To Process
@@ -184,6 +188,35 @@ def invalid_endpoint(repo: Dolt, table: str, queries: dict) -> dict:
         "error": "Invalid Endpoint",
         "code": 1
     }
+
+
+def handle_webhook(repo: Dolt, table: str, queries: dict, self) -> dict:
+    try:
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+
+        webhook_body: dict = json.loads(post_data)
+
+        response: dict = {
+            "type": "unknown",
+            "received": post_data.decode('utf-8')
+        }
+
+        if 'message' in webhook_body and webhook_body['message'] == "ping":
+            response['type'] = "ping"
+        elif 'head' in webhook_body and 'prev' in webhook_body:
+            response['type'] = "push"
+
+        # Logger Here?
+        # For Ping To Verify Webhook Existence - {"message":"ping","repository":{"name":"presidential-tweets","owner":"alexis-evelyn"}}
+        # Only Event As Of Time of Writing - {"ref":"refs/heads/master","head":"1pmuiljube6m238144qo69gvfra853uc","prev":"ro99bhicq8renuh3cectpfuaih8fp64p","repository":{"name":"corona-virus","owner":"dolthub"}}
+
+        return response
+    except:
+        return {
+            "error": "Invalid Post Data",
+            "code": 99
+        }
 
 
 def convertIDsToString(results: dict):

@@ -80,6 +80,17 @@ class RequestHandler(BaseHTTPRequestHandler):
     def log_message(self, log_format: str, *args: [str]):
         self.logger.log(logging.DEBUG, log_format % args)
 
+    def do_POST(self):
+        url: str = urlparse(self.path).path.rstrip('/').lower()
+
+        try:
+            if url.startswith("/api"):
+                api.handle_api(self=self)
+            else:
+                handler.load_404_page(self=self)
+        except BrokenPipeError as e:
+            self.logger.debug("{ip_address} Requested {page_url}: {error_message}".format(ip_address=self.address_string(), page_url=self.path, error_message=e))
+
     def do_GET(self):
         url: str = urlparse(self.path).path.rstrip('/').lower()
 
