@@ -10,6 +10,7 @@ from doltpy.core.system_helpers import get_logger
 # Stolen From: https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder#comment23054549_11158224
 import os
 import sys
+
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from archiver import config
