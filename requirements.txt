@@ -5,9 +5,9 @@ cx-Oracle==8.1.0
 decorator==4.4.2
 doltpy==1.1.8
 future==0.18.2
-idna==2.10
+idna>=2.10
 joblib==1.0.0
-mysql-connector-python==8.0.21
+mysql-connector-python>=8.0.21
 nltk==3.5
 numpy==1.19.5
 oauthlib==3.1.0
