@@ -138,7 +138,7 @@ def retrieveTweet(repo: Dolt, table: str, tweet_id: str,
                   hide_deleted_tweets: bool = False, only_deleted_tweets: bool = False) -> Optional[dict]:
     tweets: Table = Table(table)
     query: QueryBuilder = Query.from_(tweets) \
-        .select(tweets.id) \
+        .select(Star()) \
         .where(tweets.id == tweet_id) \
         .limit(1)
 

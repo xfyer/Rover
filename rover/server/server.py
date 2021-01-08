@@ -99,6 +99,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 api.handle_api(self=self)
             # elif url.startswith("/schema"):
             #     schema.handle_schema(self=self)
+            if url.startswith("/tweet"):
+                handler.load_tweet(self=self)
             elif url == "":
                 handler.load_page(self=self, page='latest-tweets')
             elif url == "/manifest.webmanifest":

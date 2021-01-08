@@ -14,18 +14,18 @@ def load_page(self, page: str):
     site_title: str = "Rover"
 
     # TODO: Verify If Multiple Connections Can Cause Data Loss
-    # data: dict = database.pickRandomOfficials(repo=self.repo)
+    data: dict = database.pickRandomOfficials(repo=self.repo)
 
     # Twitter Metadata
     twitter_title: str = site_title
-    # twitter_description: str = "Future Analysis Website Here" \
-    #                            " For Officials Such As {official_one}," \
-    #                            " {official_two}, and {official_three}" \
-    #                            .format(official_one=(data[0]["first_name"] + " " + data[0]["last_name"]),
-    #                                    official_two=(data[1]["first_name"] + " " + data[1]["last_name"]),
-    #                                    official_three=(data[2]["first_name"] + " " + data[2]["last_name"]))
+    twitter_description: str = "Future Analysis Website Here" \
+                               " For Officials Such As {official_one}," \
+                               " {official_two}, and {official_three}" \
+                               .format(official_one=(data[0]["first_name"] + " " + data[0]["last_name"]),
+                                       official_two=(data[1]["first_name"] + " " + data[1]["last_name"]),
+                                       official_three=(data[2]["first_name"] + " " + data[2]["last_name"]))
 
-    twitter_description: str = "Future Analysis Website Here For Officials Such As Donald Trump, Joe Biden, and Barack Obama"
+    # twitter_description: str = "Future Analysis Website Here For Officials Such As Donald Trump, Joe Biden, and Barack Obama"
 
     # HTTP Headers
     self.send_response(200)
@@ -115,3 +115,51 @@ def write_body(self, page: str):
 
 def write_footer(self):
     self.wfile.write(bytes(load_text_file("rover/server/web/templates/footer.html"), "utf-8"))
+
+
+def load_tweet(self):
+    # Validate URL First
+    tweet_id: str = str(self.path).lstrip("/").rstrip("/").replace("tweet/", "").split("/")[0]
+
+    # If Invalid Tweet ID
+    if not tweet_id.isnumeric():
+        return load_404_page(self=self)
+
+    table: str = config.ARCHIVE_TWEETS_TABLE
+    tweet: dict = database.retrieveTweet(repo=self.repo, table=table, tweet_id=tweet_id, hide_deleted_tweets=False,
+                                         only_deleted_tweets=False)
+
+    # If Tweet Not In Database - Return A 404
+    if len(tweet) < 1:
+        return load_404_page(self=self)
+
+    # Tweet Data
+    tweet_text: str = str(tweet[0]['text'])
+    account_id: int = tweet[0]['twitter_user_id']
+    account_info: dict = database.retrieveAccountInfo(repo=self.repo, account_id=account_id)[0]
+    account_name: str = "{first_name} {last_name}".format(first_name=account_info["first_name"], last_name=account_info["last_name"])
+
+    # Site Data
+    site_title: str = "Rover"
+
+    # Twitter Metadata
+    twitter_title: str = f"Tweet By {account_name}"
+    twitter_description: str = f"{tweet_text}"
+
+    # HTTP Headers
+    self.send_response(200)
+    self.send_header("Content-type", "text/html")
+    self.end_headers()
+
+    # Header
+    write_header(self=self, site_title=site_title, twitter_title=twitter_title, twitter_description=twitter_description)
+
+    # Body
+    # write_body(self=self, page="single-tweet")
+    self.wfile.write(bytes(load_text_file(f"rover/server/web/pages/single-tweet.html")
+                           .replace("{twitter_account}", account_name)
+                           .replace("{tweet_text}", tweet_text)
+                           , "utf-8"))
+
+    # Footer
+    write_footer(self=self)

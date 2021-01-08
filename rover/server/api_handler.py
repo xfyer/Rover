@@ -10,6 +10,14 @@ from database import database
 
 from urllib.parse import urlparse, parse_qs
 
+# Error Codes
+# 1 - Invalid Endpoint
+# 2 - No Account ID Specified
+# 3 - No Results Found!!!
+# 4 - Invalid Post Data
+# 5 - Need A Valid Tweet ID
+# 6 - No Tweet Found
+
 
 def handle_api(self):
     # Repo
@@ -55,7 +63,8 @@ def run_function(self, repo: Dolt, table: str, url: urlparse, queries: dict) -> 
         '/api/latest': load_latest_tweets,
         '/api/search': perform_search,
         '/api/accounts': lookup_account,
-        '/api/webhooks': handle_webhook
+        '/api/webhooks': handle_webhook,
+        '/api/tweet': retrieve_tweet
     }
 
     func = endpoints.get(url.path.rstrip('/'), invalid_endpoint)
@@ -215,8 +224,38 @@ def handle_webhook(repo: Dolt, table: str, queries: dict, self) -> dict:
     except:
         return {
             "error": "Invalid Post Data",
-            "code": 99
+            "code": 4
         }
+
+
+def retrieve_tweet(repo: Dolt, table: str, queries: dict, self) -> dict:
+    tweet_id: Optional[int] = int(queries['id'][0]) if "id" in queries and validateNumber(queries['id'][0]) else None
+
+    response: dict = {
+        "error": "Need A Valid Tweet ID",
+        "code": 5
+    }
+
+    if tweet_id is None:
+        return response
+
+    tweet: dict = convertIDsToString(
+        results=database.retrieveTweet(repo=repo, table=table, tweet_id=str(tweet_id),
+                                       hide_deleted_tweets=False,
+                                       only_deleted_tweets=False))
+
+    if len(tweet) < 1:
+        response: dict = {
+            "error": "No Tweet Found",
+            "code": 6
+        }
+    else:
+        response: dict = {
+            "results": tweet,
+            "tweet_id": tweet[0]['id']
+        }
+
+    return response
 
 
 def convertIDsToString(results: dict):
