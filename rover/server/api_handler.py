@@ -182,7 +182,8 @@ def send_help(repo: Dolt, table: str, queries: dict, self) -> dict:
             {"/api": "Query List of Endpoints"},
             {"/api/latest": "Retrieve Newest Tweets"},
             {"/api/search": "Search For Tweets"},
-            {"/api/accounts": "Lookup Account Info By ID"}
+            {"/api/accounts": "Lookup Account Info By ID"},
+            {"/api/tweet": "Lookup Tweet By ID"}
         ],
         "note": "Future Description of Query Parameters Are On My Todo List"
     }
