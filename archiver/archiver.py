@@ -280,6 +280,10 @@ class Archiver(threading.Thread):
                     if not isinstance(tweet, dict):
                         return
 
+                    if "errors" in tweet and len(tweet["errors"]) > 0 and tweet["errors"][0]["code"] == 80:
+                        logging.log(self.INFO_QUIET, "Hit Rate Limit!!!")
+                        return
+
                     if update_tweets:
                         self.logger.log(self.INFO_QUIET, f"Updating Existing Tweet: {row[0]}")
                     else:
