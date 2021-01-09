@@ -4,6 +4,7 @@ import logging
 import twitter
 from doltpy.core import Dolt
 from doltpy.core.system_helpers import logger
+from twitter import TwitterError
 
 from database import database
 from rover import config
@@ -64,9 +65,19 @@ def search_text(api: twitter.Api, status: twitter.models.Status,
         return
 
     search_post_response = search_results[0]
-    author = get_username_by_id(api=api, author_id=search_post_response["twitter_user_id"])
-    url = "https://twitter.com/{screen_name}/statuses/{status_id}".format(status_id=search_post_response["id"],
-                                                                          screen_name=author)
+    failed_account_lookup: bool = False
+    try:
+        author = get_username_by_id(api=api, author_id=search_post_response["twitter_user_id"])
+    except TwitterError:
+        author = database.retrieveAccountInfo(repo=repo, account_id=search_post_response["twitter_user_id"])[0]["twitter_handle"]
+        failed_account_lookup: bool = True
+
+    if search_post_response["isDeleted"] == 0 and not failed_account_lookup:
+        url = "https://twitter.com/{screen_name}/statuses/{status_id}".format(status_id=search_post_response["id"],
+                                                                              screen_name=author)
+    else:
+        url = "{website_root}/tweet/{status_id}".format(website_root=config.WEBSITE_ROOT,
+                                                        status_id=search_post_response["id"])
 
     count: int = database.count_tweets(search_phrase=phrase,
                                        account_id=search_post_response["twitter_user_id"],

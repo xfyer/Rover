@@ -31,8 +31,11 @@ TWITTER_USER_ID: int = 870156302298873856
 TWITTER_USER_HANDLE: str = "@DigitalRoverDog"
 
 # CORS
-ALLOW_CORS = True
-CORS_SITES = "*"
+ALLOW_CORS: bool = True
+CORS_SITES: str = "*"
+
+# Website URL
+WEBSITE_ROOT: str = "https://alexisevelyn.me"
 
 # Other
 REPLY: bool = True

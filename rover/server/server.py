@@ -110,7 +110,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif url == "/favicon.ico":
                 handler.load_404_page(self=self)
             elif url == "/images/rover-twitter-card.png":
-                handler.load_file(self=self, path="rover/server/web/images/Rover-120x120.png", mime_type="image/png")
+                handler.load_file(self=self, path="rover/server/web/images/Rover.png", mime_type="image/png")
             elif url == "/images/rover.png":
                 handler.load_file(self=self, path="rover/server/web/images/Rover.png", mime_type="image/png")
             elif url == "/images/rover.svg":
