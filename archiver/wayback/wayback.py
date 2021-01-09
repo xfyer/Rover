@@ -27,6 +27,7 @@ import os
 from typing import Optional
 
 import pandas as pd
+import requests
 
 list_folder: str = "archive-me"
 temp_files: list = os.listdir(list_folder)
@@ -67,3 +68,13 @@ for file in files:
 
     print(contents)
     contents.to_csv(path_or_buf=os.path.join(list_folder, download_folder_stripped + ".csv"))
+
+    contents.drop_duplicates(inplace=True, subset=["old_checksum"])
+
+    for row in contents.itertuples():
+        r = requests.get(row.raw_url, allow_redirects=True)
+
+        print(f"Saving {row.date}")
+        page = open(mode="w", file=os.path.join(download_folder, str(row.date) + ".html"))
+        page.writelines(r.text)
+        page.close()
