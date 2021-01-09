@@ -4,17 +4,17 @@
 # https://web.archive.org/web/20090420095939/https://twitter.com/realDonaldTrump
 # https://web.archive.org/cdx/search/cdx?url=twitter.com/realDonaldTrump
 # https://archive.org/web/researcher/cdx_file_format.php
+# https://support.archive-it.org/hc/en-us/articles/115001790023-Access-Archive-It-s-Wayback-index-with-the-CDX-C-API
 
 # Format Of Files
 # ---------------
 # Canonized URL
 # Date
-# IP
 # Original URL
 # Mime Type of Original Document
 # Response Code
 # Old Style Checksum
-# New Style Checksum
+# Length
 
 # 20090420095939
 # For Unmodified Pages - https://web.archive.org/web/20090420095939id_/http://twitter.com:80/realDonaldTrump
@@ -56,7 +56,7 @@ for file in files:
                                                 "mime_type",
                                                 "response_code",
                                                 "old_checksum",
-                                                "new_checksum"])
+                                                "length"])
 
     print(contents)
     contents.to_csv(path_or_buf=os.path.join(list_folder, download_folder_stripped + ".csv"))
