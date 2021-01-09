@@ -69,3 +69,5 @@ pip3 install -r requirements.txt
 ```
 
 <!-- https://web.archive.org/web/*/twitter.com/realdonaldtrump -->
+<!-- https://web.archive.org/web/*/twitter.com/potus -->
+<!-- tensorflow>=2.4.0 -->
