@@ -73,8 +73,13 @@ for file in files:
 
     for row in contents.itertuples():
         r = requests.get(row.raw_url, allow_redirects=True)
+        a = requests.get(row.archive_url, allow_redirects=True)
 
         print(f"Saving {row.date}")
-        page = open(mode="w", file=os.path.join(download_folder, str(row.date) + ".html"))
-        page.writelines(r.text)
-        page.close()
+        r_page = open(mode="w", file=os.path.join(download_folder, str(row.date) + "-raw.html"))
+        r_page.writelines(r.text)
+        r_page.close()
+
+        a_page = open(mode="w", file=os.path.join(download_folder, str(row.date) + "-archive.html"))
+        a_page.writelines(a.text)
+        a_page.close()
