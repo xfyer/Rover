@@ -61,5 +61,9 @@ for file in files:
                                                 "old_checksum",
                                                 "length"])
 
+    # https://web.archive.org/web/20090420095939id_/http://twitter.com:80/realDonaldTrump
+    contents["raw_url"] = "https://web.archive.org/web/" + contents["date"].astype(str) + "_id/" + contents["original_url"].astype(str)
+    contents["archive_url"] = "https://web.archive.org/web/" + contents["date"].astype(str) + "/" + contents["original_url"].astype(str)
+
     print(contents)
     contents.to_csv(path_or_buf=os.path.join(list_folder, download_folder_stripped + ".csv"))
