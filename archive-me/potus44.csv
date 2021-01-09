@@ -1,4 +1,4 @@
-,canonized_url,date,original_url,mime_type,response_code,old_checksum,new_checksum
+,canonized_url,date,original_url,mime_type,response_code,old_checksum,length
 0,"com,twitter)/potus44",20161102080005,https://twitter.com/POTUS44,text/html,200,XS6WWFSXCCGNRSUZPG7GWJM4YTLRZIZV,29953
 1,"com,twitter)/potus44",20170112175119,https://twitter.com/POTUS44,text/html,200,RAL44IALJIOZAMEGTYCHWA4MWACUQKFR,27914
 2,"com,twitter)/potus44",20170119000654,http://www.twitter.com/potus44,unk,301,3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ,404

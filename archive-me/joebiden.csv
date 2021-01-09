@@ -1,4 +1,4 @@
-,canonized_url,date,original_url,mime_type,response_code,old_checksum,new_checksum
+,canonized_url,date,original_url,mime_type,response_code,old_checksum,length
 0,"com,twitter)/joebiden",20070616134936,http://twitter.com:80/joebiden,text/html,200,CXAJYU22NYCDLYCSEOIMAYY36C7EVERN,5820
 1,"com,twitter)/joebiden",20070626165555,http://twitter.com:80/JoeBiden,text/html,200,23AJJKN7KOSTSEQAGTLZYSJZODWQBBQK,5949
 2,"com,twitter)/joebiden",20070628170848,http://twitter.com:80/JoeBiden,text/html,200,3446LOQ35GLSQUWPF3N5AUAAC24SAWL4,5921

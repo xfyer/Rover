@@ -24,15 +24,18 @@
 # https://web.archive.org/web/20210106212653/https://video.twimg.com/ext_tw_video/1346928794456776705/pu/vid/1280x720/xJsJiUTRa-ggqL1D.mp4
 
 import os
+from typing import Optional
+
 import pandas as pd
 
 list_folder: str = "archive-me"
-files: list = os.listdir(list_folder)
+temp_files: list = os.listdir(list_folder)
+files: list = []
 
 # Remove Non-URL Files
-for file in files:
-    if ".url" not in file:
-        files.remove(file)
+for file in temp_files:
+    if ".url" in file:
+        files.append(file)
 
 if not os.path.exists('working/wayback'):
     os.makedirs('working/wayback')
